@@ -1,7 +1,8 @@
 {
-  "name": "ts-nextjs-tailwind-starter",
+  "name": "homepage",
   "version": "0.1.0",
   "private": true,
+  "license": "no",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
