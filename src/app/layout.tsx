@@ -7,8 +7,6 @@ import '@/styles/colors.css';
 
 import { siteConfig } from '@/constant/config';
 
-// !STARTERCONF Change these default meta
-// !STARTERCONF Look at @/constant/config to change them
 export const metadata: Metadata = {
   title: {
     default: siteConfig.title,
@@ -29,17 +27,17 @@ export const metadata: Metadata = {
     title: siteConfig.title,
     description: siteConfig.description,
     siteName: siteConfig.title,
-    images: [`${siteConfig.url}/images/og.jpg`],
+    images: [],
     type: 'website',
     locale: 'en_US',
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: siteConfig.title,
-    description: siteConfig.description,
-    images: [`${siteConfig.url}/images/og.jpg`],
-    // creator: '@th_clarence',
-  },
+  // twitter: {
+  //   card: 'summary_large_image',
+  //   title: siteConfig.title,
+  //   description: siteConfig.description,
+  //   images: [ ],
+  //   // creator: '@th_clarence',
+  // },
   // authors: [
   //   {
   //     name: 'Theodorus Clarence',

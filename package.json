@@ -2,7 +2,7 @@
   "name": "homepage",
   "version": "0.1.0",
   "private": true,
-  "license": "no",
+  "license": "unlicense",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
