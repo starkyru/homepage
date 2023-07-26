@@ -8,7 +8,9 @@ describe('Homepage', () => {
   it('renders the Components', () => {
     render(<HomePage />);
 
-    const heading = screen.getByText(/Ilia Dzhiubanskii/i);
+    const heading = screen.getByText(
+      /Ilia Dzhiubanskii - Senior Software Developer/i
+    );
 
     expect(heading).toBeInTheDocument();
   });
