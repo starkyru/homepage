@@ -34,8 +34,8 @@ export default function HomePage() {
             companies.
           </p>
           <p className='mt-2 text-sm text-gray-700'>
-            Preferable technology stack: TypeScript/JavaScript, Reac/Next.jst,
-            React Native, Redux, Jest, GIT, GraphQL/REST,
+            <strong>Preferable technology stack:</strong> TypeScript/JavaScript,
+            Reac/Next.jst, React Native, Redux, Jest, GIT, GraphQL/REST,
             CSS/Bootstrap/Tailwind/SASS, Jira.
           </p>
 
