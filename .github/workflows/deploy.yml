@@ -28,8 +28,8 @@ jobs:
             cd ${{ secrets.TARGET_DIRECTORY }}
             /usr/bin/keychain ~${{ secrets.USERNAME }}/.ssh/id_rsa
             source ~${{ secrets.USERNAME }}/.keychain/$HOSTNAME-sh
+            nvm use 18
             git pull origin main
             git status
-            nvm use 18
             npm install --only=prod
             pm2 restart homepage
