@@ -25,7 +25,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script: |
-            cd ${{ secrets.HOME_DIRECTORY }}
+            cd ${{ secrets.TARGET_DIRECTORY }}
             git pull origin main
             git status
             npm install --only=prod
