@@ -33,5 +33,6 @@ jobs:
             nvm use 18
             git pull origin main
             git status
-            npm install --only=prod
+            yarn
+            yarn build
             pm2 restart homepage
