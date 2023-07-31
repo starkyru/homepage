@@ -30,5 +30,6 @@ jobs:
             source ~${{ secrets.USERNAME }}/.keychain/$HOSTNAME-sh
             git pull origin main
             git status
+            nvm use 18
             npm install --only=prod
             pm2 restart homepage
