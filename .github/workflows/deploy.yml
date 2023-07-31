@@ -27,6 +27,7 @@ jobs:
           script: |
             cd ${{ secrets.TARGET_DIRECTORY }}
             whoami
+            ls -al
           # git pull origin main
           # git status
           # npm install --only=prod
