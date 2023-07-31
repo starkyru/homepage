@@ -28,6 +28,8 @@ jobs:
             cd ${{ secrets.TARGET_DIRECTORY }}
             /usr/bin/keychain ~${{ secrets.USERNAME }}/.ssh/id_rsa
             source ~${{ secrets.USERNAME }}/.keychain/$HOSTNAME-sh
+            export NVM_DIR=~/.nvm
+            source ~/.nvm/nvm.sh
             nvm use 18
             git pull origin main
             git status
