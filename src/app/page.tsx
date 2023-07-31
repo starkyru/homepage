@@ -38,6 +38,11 @@ export default function HomePage() {
             Reac/Next.jst, React Native, Redux, Jest, GIT, GraphQL/REST,
             CSS/Bootstrap/Tailwind/SASS, Jira.
           </p>
+          <p>
+            <UnderlineLink href='https://docs.google.com/document/d/1YMGDsUACjwvl9xa9Ebgg778UXwCWcV25DFWFl7qfoZk/export?format=pdf'>
+              Download my latest resume (PDF).
+            </UnderlineLink>
+          </p>
 
           <footer className='absolute bottom-2 text-gray-700'>
             © {new Date().getFullYear()} By{' '}
