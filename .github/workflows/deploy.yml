@@ -33,6 +33,7 @@ jobs:
             nvm use 18
             git pull origin main
             git status
-            yarn
-            yarn build
+            npm i -g pnpm
+            pnpm install
+            pnpm build
             pm2 restart homepage

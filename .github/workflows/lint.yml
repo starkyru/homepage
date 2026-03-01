@@ -24,19 +24,20 @@ jobs:
         with:
           node-version: 18
 
-      - name: 📥 Download deps
-        uses: u0reo/npm-install@fix/restore-failure
-        with:
-          useRollingCache: true
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: 📥 Install deps
+        run: pnpm install --frozen-lockfile
 
       - name: 🔬 Lint
-        run: yarn lint:strict
+        run: pnpm lint:strict
 
       - name: 🔎 Type check
-        run: yarn typecheck
+        run: pnpm typecheck
 
       - name: 💅 Prettier check
-        run: yarn format:check
+        run: pnpm format:check
 
       - name: 🃏 Run jest
-        run: yarn test
+        run: pnpm test

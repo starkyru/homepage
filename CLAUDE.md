@@ -9,19 +9,19 @@ Personal portfolio website for Ilia Dzhiubanskii (dzhiubanskii.com). Built with 
 ## Commands
 
 ```bash
-yarn dev              # Start dev server
-yarn build            # Production build (runs next-sitemap postbuild)
-yarn lint             # ESLint check
-yarn lint:strict      # ESLint with zero warnings allowed (used in CI)
-yarn lint:fix         # ESLint autofix + Prettier format
-yarn typecheck        # TypeScript check (tsc --noEmit)
-yarn test             # Run all Jest tests
-yarn test:watch       # Jest in watch mode
-yarn format           # Prettier format all files
-yarn format:check     # Prettier check (used in CI)
+pnpm dev              # Start dev server
+pnpm build            # Production build (runs next-sitemap postbuild)
+pnpm lint             # ESLint check
+pnpm lint:strict      # ESLint with zero warnings allowed (used in CI)
+pnpm lint:fix         # ESLint autofix + Prettier format
+pnpm typecheck        # TypeScript check (tsc --noEmit)
+pnpm test             # Run all Jest tests
+pnpm test:watch       # Jest in watch mode
+pnpm format           # Prettier format all files
+pnpm format:check     # Prettier check (used in CI)
 ```
 
-Run a single test: `yarn jest src/__tests__/path/to/test.tsx`
+Run a single test: `pnpm jest src/__tests__/path/to/test.tsx`
 
 ## Architecture
 
