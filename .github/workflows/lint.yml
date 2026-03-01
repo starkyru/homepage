@@ -17,12 +17,12 @@ jobs:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v2
         with:
-          node-version: 18
+          node-version: 20
 
       - name: ⎔ Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
 
       - name: 📦 Setup pnpm
         uses: pnpm/action-setup@v4
