@@ -3,7 +3,7 @@
  * @see https://github.com/iamvishnusankar/next-sitemap#readme
  */
 module.exports = {
-  siteUrl: 'https://dzhiubanskii.com',
+  siteUrl: 'https://ilia.to',
   generateRobotsTxt: true,
   robotsTxtOptions: {
     policies: [{ userAgent: '*', allow: '/' }],

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Personal portfolio website for Ilia Dzhiubanskii (dzhiubanskii.com). Built with Next.js 15 App Router, React 19, TypeScript 5, and Tailwind CSS.
+Personal portfolio website for Ilia Dzhiubanskii (ilia.to). Built with Next.js 16 App Router, React 19, TypeScript 5, and Tailwind CSS.
 
 ## Commands
 
