@@ -35,3 +35,7 @@ pnpm-debug.log*
 
 # changelog
 CHANGELOG.md
+
+# generated files
+pnpm-lock.yaml
+public/resume.html
