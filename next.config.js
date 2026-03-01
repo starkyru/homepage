@@ -1,9 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    dirs: ['src'],
-  },
-
   reactStrictMode: true,
 
   // Uncoment to add domain whitelist
@@ -12,6 +8,15 @@ const nextConfig = {
   //     'res.cloudinary.com',
   //   ],
   // },
+
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
+      },
+    },
+  },
 
   webpack(config) {
     // Grab the existing rule that handles SVG imports
