@@ -9,7 +9,7 @@ export default function HomePage() {
   return (
     <main className='bg-white'>
       <a
-        href='https://docs.google.com/document/d/1YMGDsUACjwvl9xa9Ebgg778UXwCWcV25DFWFl7qfoZk/export?format=pdf'
+        href='https://docs.google.com/document/d/1FozMEumbKlGOmrFjOYAsLtrpIC0WKh1Y/export?format=pdf'
         title='Download resume as PDF'
         className='fixed right-6 top-6 z-50 rounded-lg bg-white p-2 shadow-lg transition-opacity hover:opacity-80'
       >
