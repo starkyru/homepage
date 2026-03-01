@@ -45,14 +45,6 @@ function parseResumeHtml() {
   return { scopedStyle, body };
 }
 
-const EMAIL_DECODE_SCRIPT = `
-document.querySelectorAll('.email-protected').forEach(function(el) {
-  var u = atob(el.dataset.u);
-  var d = atob(el.dataset.d);
-  el.textContent = u + '@' + d;
-});
-`;
-
 export default function Resume() {
   const { scopedStyle, body } = parseResumeHtml();
 
@@ -63,7 +55,6 @@ export default function Resume() {
         className='resume-embed'
         dangerouslySetInnerHTML={{ __html: body }}
       />
-      <script dangerouslySetInnerHTML={{ __html: EMAIL_DECODE_SCRIPT }} />
     </>
   );
 }
