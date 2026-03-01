@@ -6,13 +6,13 @@ import '@testing-library/jest-dom';
 import HomePage from '@/app/page';
 
 describe('Homepage', () => {
-  it('renders the Components', () => {
+  it('renders the resume and PDF download link', () => {
     render(<HomePage />);
 
-    const heading = screen.getByText(
-      /Ilia Dzhiubanskii - Senior Software Developer/i,
-    );
+    const pdfLink = screen.getByTitle('Download resume as PDF');
+    expect(pdfLink).toBeInTheDocument();
 
-    expect(heading).toBeInTheDocument();
+    const resumeEmbed = document.querySelector('.resume-embed');
+    expect(resumeEmbed).toBeInTheDocument();
   });
 });
