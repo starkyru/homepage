@@ -20,7 +20,7 @@
     "format:check": "prettier -c .",
     "postbuild": "next-sitemap --config next-sitemap.config.js",
     "prepare": "husky",
-    "update:resume": "curl -L 'https://docs.google.com/document/d/1FozMEumbKlGOmrFjOYAsLtrpIC0WKh1Y/export?format=html' -o public/resume.html"
+    "update:resume": "curl -L 'https://docs.google.com/document/d/1FozMEumbKlGOmrFjOYAsLtrpIC0WKh1Y/export?format=html' -o public/resume.html && git add public/resume.html && git commit -m 'docs: update resume'"
   },
   "dependencies": {
     "@eslint/js": "^10.0.1",
