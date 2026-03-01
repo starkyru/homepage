@@ -8,7 +8,7 @@ import UnstyledLink, {
   UnstyledLinkProps,
 } from '@/components/links/UnstyledLink';
 
-const IconLinkVariant = [
+const _IconLinkVariant = [
   'primary',
   'outline',
   'ghost',
@@ -18,7 +18,7 @@ const IconLinkVariant = [
 
 type IconLinkProps = {
   isDarkBg?: boolean;
-  variant?: (typeof IconLinkVariant)[number];
+  variant?: (typeof _IconLinkVariant)[number];
   icon?: IconType | LucideIcon;
   classNames?: {
     icon?: string;
@@ -35,7 +35,7 @@ const IconLink = React.forwardRef<HTMLAnchorElement, IconLinkProps>(
       classNames,
       ...rest
     },
-    ref
+    ref,
   ) => {
     return (
       <UnstyledLink
@@ -84,14 +84,14 @@ const IconLink = React.forwardRef<HTMLAnchorElement, IconLinkProps>(
           ],
           //#endregion  //*======== Variants ===========
           'disabled:cursor-not-allowed',
-          className
+          className,
         )}
         {...rest}
       >
         {Icon && <Icon size='1em' className={cn(classNames?.icon)} />}
       </UnstyledLink>
     );
-  }
+  },
 );
 
 export default IconLink;
