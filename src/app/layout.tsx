@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Script from 'next/script';
 import * as React from 'react';
 
 import '@/styles/globals.css';
@@ -53,7 +54,14 @@ export default function RootLayout({
 }) {
   return (
     <html>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Script
+          src='https://stats.ilia.to/script.js'
+          data-website-id='9cbf542a-4bc0-40c5-a310-ddce1f02a4e9'
+          strategy='afterInteractive'
+        />
+      </body>
     </html>
   );
 }
