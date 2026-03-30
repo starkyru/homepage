@@ -258,9 +258,11 @@ export default function DayNightBackground({
         : 0;
 
       // Accumulate rotation angles incrementally (avoids jump on hover speed change)
+      // Scale rotation speed with viewport width (faster on larger screens)
+      const screenScale = Math.max(1, W / 1000); // 1x at 1000px, scales up without cap for large screens
       const dt = 0.008; // Matches s.t increment
-      s.rotAng += (0.5 / 3) * s.smoothHoverSpeed * dt;
-      s.angAnim += (1.3 / 3) * s.smoothHoverSpeed * dt;
+      s.rotAng += (0.5 / 3) * s.smoothHoverSpeed * screenScale * dt;
+      s.angAnim += (1.3 / 3) * s.smoothHoverSpeed * screenScale * dt;
       const mobileAlpha = 0.5; // Ray/wave opacity multiplier
 
       // ——— Background ———
