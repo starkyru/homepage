@@ -12,8 +12,6 @@ export interface PoolLetter {
   font: string; // CSS font string
 }
 
-const GLYPH_PAD = 2; // Padding around cached glyph bitmaps (px)
-
 // ——— Hardcoded params (from Waves project defaults) ———
 const PARAMS = {
   gradientForce: 18000,
@@ -35,26 +33,22 @@ const PARAMS = {
 
 const WATER_SCALE = 3; // Downscale factor for water simulation
 const DT = 1 / 60; // Physics timestep
-const COLOR_BUCKETS = 10; // Number of color-displacement buckets for glyph cache
-
-// ——— Glyph cache entry ———
-interface GlyphEntry {
-  canvas: OffscreenCanvas;
-  w: number;
-  h: number;
-  baseY: number;
-}
+const COLOR_BUCKETS = 10; // Number of color-displacement buckets
 
 export class PoolEngine {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private water: WaterCaustics;
   private letters: PoolLetter[] = [];
-  private glyphCache = new Map<string, GlyphEntry>();
   private bucketColors: string[] = [];
   private rafId = 0;
   private lastFrameTime = 0;
   private running = false;
+
+  // FPS counter
+  private fpsFrames = 0;
+  private fpsLastTime = 0;
+  private fpsDisplay = 0;
 
   // Mouse/touch state for ripples
   private mouseDown = false;
@@ -170,13 +164,11 @@ export class PoolEngine {
       vy: 0,
       font: l.font,
     }));
-    this.buildGlyphCache();
   }
 
   setColorScheme(isDark: boolean) {
     this.buildColorPalette(isDark);
     this.bgColor = isDark ? 'rgb(2,8,20)' : 'rgb(255,254,250)';
-    this.buildGlyphCache();
   }
 
   resize(w: number, h: number) {
@@ -215,6 +207,15 @@ export class PoolEngine {
     const loop = (time: number) => {
       if (!this.running) return;
       this.lastFrameTime = time;
+
+      // FPS calculation
+      this.fpsFrames++;
+      if (time - this.fpsLastTime >= 1000) {
+        this.fpsDisplay = this.fpsFrames;
+        this.fpsFrames = 0;
+        this.fpsLastTime = time;
+      }
+
       this.emitRipples(time);
       this.updatePhysics(time);
       this.render();
@@ -262,51 +263,7 @@ export class PoolEngine {
     }
   }
 
-  private buildGlyphCache() {
-    this.glyphCache = new Map();
-    const chars = new Set<string>();
-    const fonts = new Set<string>();
-    for (const letter of this.letters) {
-      chars.add(letter.char);
-      fonts.add(letter.font);
-    }
-
-    const pad = GLYPH_PAD;
-    const { ctx } = this;
-
-    for (const font of fonts) {
-      ctx.font = font;
-      ctx.textBaseline = 'alphabetic';
-
-      for (const char of chars) {
-        const metrics = ctx.measureText(char);
-        const w = Math.ceil(metrics.width) + pad * 2;
-        const ascent = Math.ceil(metrics.actualBoundingBoxAscent || 14);
-        const descent = Math.ceil(metrics.actualBoundingBoxDescent || 4);
-        const h = ascent + descent + pad * 2;
-        const baseY = ascent + pad;
-
-        for (let b = 0; b < COLOR_BUCKETS; b++) {
-          const oc = new OffscreenCanvas(w, h);
-          const octx = oc.getContext('2d')!;
-          (
-            octx as unknown as { imageSmoothingEnabled: boolean }
-          ).imageSmoothingEnabled = false;
-          octx.font = font;
-          octx.textBaseline = 'alphabetic';
-          octx.fillStyle = this.bucketColors[b];
-          octx.fillText(char, pad, baseY);
-
-          this.glyphCache.set(`${char}:${font}:${b}`, {
-            canvas: oc,
-            w,
-            h,
-            baseY,
-          });
-        }
-      }
-    }
-  }
+  // No glyph cache — render directly with fillText for reliability
 
   private emitRipples(time: number) {
     if (!this.mouseDown) return;
@@ -427,6 +384,9 @@ export class PoolEngine {
     const invMax = 1 / PARAMS.maxDisplacement;
     const bucketScale = COLOR_BUCKETS - 1;
 
+    ctx.textBaseline = 'alphabetic';
+    let lastFont = '';
+
     for (let i = 0; i < this.letters.length; i++) {
       const letter = this.letters[i];
       const dx = letter.x - letter.ox;
@@ -435,16 +395,24 @@ export class PoolEngine {
       const t = Math.min(Math.sqrt(distSq) * invMax, 1);
       const bucket = (t * bucketScale + 0.5) | 0;
 
-      const glyph = this.glyphCache.get(
-        `${letter.char}:${letter.font}:${bucket}`,
-      );
-      if (glyph) {
-        ctx.drawImage(
-          glyph.canvas,
-          letter.x - GLYPH_PAD,
-          letter.y - glyph.baseY,
-        );
+      // Only set font when it changes (sorted letters help, but even unsorted this is fast)
+      if (letter.font !== lastFont) {
+        ctx.font = letter.font;
+        lastFont = letter.font;
       }
+      ctx.fillStyle = this.bucketColors[bucket];
+      ctx.fillText(letter.char, letter.x, letter.y);
     }
+
+    // FPS counter — bottom left
+    ctx.font = '11px monospace';
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle =
+      this.bgColor === 'rgb(2,8,20)'
+        ? 'rgba(100,180,255,0.4)'
+        : 'rgba(0,0,0,0.25)';
+    const fpsText = `${this.fpsDisplay} fps | ${this.letters.length} chars | ${this.water.ripples.length} ripples`;
+    const fpsWidth = ctx.measureText(fpsText).width;
+    ctx.fillText(fpsText, W - fpsWidth - 10, H - 10);
   }
 }
