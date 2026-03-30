@@ -93,6 +93,21 @@
   .min-h-main {
     @apply min-h-[calc(100vh-56px)];
   }
+
+  /* Dark mode: resume content color overrides */
+  .dark .resume-embed {
+    color: #d1d5db;
+    transition: color 1.2s ease;
+  }
+
+  .dark .resume-embed * {
+    color: inherit !important;
+    border-color: #374151 !important;
+  }
+
+  .dark .resume-embed a {
+    color: #93c5fd !important;
+  }
 }
 
 @layer utilities {

@@ -6,6 +6,8 @@ import '@/styles/globals.css';
 // !STARTERCONF This is for demo purposes, remove @/styles/colors.css import immediately
 import '@/styles/colors.css';
 
+import DayNightBackground from '@/components/DayNightBackground';
+
 import { siteConfig } from '@/constant/config';
 
 export const metadata: Metadata = {
@@ -55,7 +57,7 @@ export default function RootLayout({
   return (
     <html>
       <body>
-        {children}
+        <DayNightBackground>{children}</DayNightBackground>
         <Script
           src='https://stats.ilia.to/script.js'
           data-website-id='9cbf542a-4bc0-40c5-a310-ddce1f02a4e9'
