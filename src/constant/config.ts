@@ -1,5 +1,5 @@
 export const siteConfig = {
   title: 'Ilia Dzhiubanskii ',
-  description: 'Senior Software Developer',
+  description: 'Senior Software Engineer',
   url: 'https://ilia.to',
 };
