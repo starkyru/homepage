@@ -153,7 +153,7 @@ export default function DayNightBackground({
     if (typeof window !== 'undefined') {
       return localStorage.getItem('theme') === 'dark';
     }
-    return false;
+    return true;
   });
 
   const initDark = isDark;
