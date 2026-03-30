@@ -149,14 +149,20 @@ export default function DayNightBackground({
   const rayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const moonCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const movingStarsRef = useRef<MovingStar[]>([]);
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') === 'dark';
+    }
+    return false;
+  });
 
+  const initDark = isDark;
   const stRef = useRef({
     t: 0,
     gfi: 0,
     fc: 0,
-    progress: 0, // 0 = day, 1 = night
-    target: 0,
+    progress: initDark ? 1 : 0, // 0 = day, 1 = night
+    target: initDark ? 1 : 0,
     transStart: -1,
     transFrom: 0,
     hovered: false,
@@ -173,7 +179,9 @@ export default function DayNightBackground({
     s.target = s.target === 0 ? 1 : 0;
     s.transStart = performance.now();
     s.transFrom = s.progress;
-    setIsDark(s.target === 1);
+    const dark = s.target === 1;
+    setIsDark(dark);
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
   }, []);
 
   // Sync dark class on <html>
