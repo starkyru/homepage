@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Initial background matches theme — blocking script sets .dark before paint */
+html {
+  background: #fffefa;
+}
+
+html.dark {
+  background: #020814;
+}
+
+/* Fade body in after canvas initializes */
+body {
+  opacity: 0;
+  animation: fadeIn 0.3s ease 0.05s forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
 :root {
   /* #region  /**=========== Primary Color =========== */
   /* !STARTERCONF Customize these variable, copy and paste from /styles/colors.css for list of colors */

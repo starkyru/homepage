@@ -10,6 +10,9 @@ import {
   useState,
 } from 'react';
 
+import PoolMode from '@/components/PoolMode';
+import WaveIcon from '@/components/WaveIcon';
+
 // ——— Theme context ———
 const ThemeContext = createContext<{ isDark: boolean; toggle: () => void }>({
   isDark: false,
@@ -144,11 +147,15 @@ export default function DayNightBackground({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const waveBtnRef = useRef<HTMLButtonElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef(0);
   const grainsRef = useRef<HTMLCanvasElement[]>([]);
   const rayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const moonCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const movingStarsRef = useRef<MovingStar[]>([]);
+  const [poolActive, setPoolActive] = useState(false);
+
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('theme') === 'dark';
@@ -182,6 +189,14 @@ export default function DayNightBackground({
     const dark = s.target === 1;
     setIsDark(dark);
     localStorage.setItem('theme', dark ? 'dark' : 'light');
+  }, []);
+
+  const togglePool = useCallback(() => {
+    setPoolActive((prev) => {
+      const next = !prev;
+      localStorage.setItem('poolMode', next ? 'on' : 'off');
+      return next;
+    });
   }, []);
 
   // Sync dark class on <html>
@@ -221,6 +236,13 @@ export default function DayNightBackground({
         btnRef.current.style.top = `${cy - r}px`;
         btnRef.current.style.width = `${r * 2}px`;
         btnRef.current.style.height = `${r * 2}px`;
+      }
+      if (waveBtnRef.current) {
+        const r = Math.max(SUN_R, MOON_R) + 18;
+        waveBtnRef.current.style.left = `${cx - r}px`;
+        waveBtnRef.current.style.top = `${cy + r + 12}px`;
+        waveBtnRef.current.style.width = `${r * 2}px`;
+        waveBtnRef.current.style.height = `${r * 2}px`;
       }
     }
 
@@ -624,7 +646,7 @@ export default function DayNightBackground({
         style={{
           position: 'fixed',
           inset: 0,
-          zIndex: 0,
+          zIndex: -1,
           pointerEvents: 'none',
         }}
       />
@@ -644,11 +666,39 @@ export default function DayNightBackground({
           border: 'none',
           background: 'transparent',
           cursor: 'pointer',
-          zIndex: 2,
+          zIndex: 15,
           padding: 0,
         }}
       />
-      <div style={{ position: 'relative', zIndex: 1 }}>{children}</div>
+      <button
+        ref={waveBtnRef}
+        onClick={togglePool}
+        aria-label={poolActive ? 'Exit pool mode' : 'Enter pool mode'}
+        style={{
+          position: 'fixed',
+          borderRadius: '50%',
+          border: 'none',
+          background: poolActive
+            ? isDark
+              ? 'rgba(55,115,240,0.3)'
+              : 'rgba(255,195,0,0.3)'
+            : 'transparent',
+          cursor: 'pointer',
+          zIndex: 15,
+          padding: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: isDark ? '#8aaad0' : '#b08830',
+          transition: 'background 300ms, color 300ms',
+        }}
+      >
+        <WaveIcon size={18} />
+      </button>
+      <PoolMode active={poolActive} contentRef={contentRef} />
+      <div ref={contentRef} style={{ position: 'relative' }}>
+        {children}
+      </div>
     </ThemeContext.Provider>
   );
 }
