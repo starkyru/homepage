@@ -162,6 +162,10 @@ export default function DayNightBackground({
     hovered: false,
     cx: 0,
     cy: 0,
+    mobile: false, // True when viewport width < 768px
+    rotAng: 0, // Accumulated ray rotation angle (radians)
+    angAnim: 0, // Accumulated ray wobble phase
+    smoothHoverSpeed: 1.0, // Smoothly interpolated hover speed multiplier
   });
 
   const toggle = useCallback(() => {
@@ -215,6 +219,7 @@ export default function DayNightBackground({
     function resize() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      stRef.current.mobile = window.innerWidth < 768;
       updatePosition();
     }
 
@@ -245,11 +250,18 @@ export default function DayNightBackground({
       const CX = s.cx;
       const CY = s.cy;
 
-      // Hover effects
+      // Hover effects (smoothly interpolated to avoid jerks)
+      const targetHoverSpeed = s.hovered ? 2.0 : 1.0;
+      s.smoothHoverSpeed += (targetHoverSpeed - s.smoothHoverSpeed) * 0.04; // Ease toward target
       const hoverPulse = s.hovered // Scale boost when hovering (0 or oscillating ~0.08..0.20)
         ? Math.sin(t * 5) * 0.12 + 0.08
         : 0;
-      const hoverSpeed = s.hovered ? 2.0 : 1.0; // Ray rotation speed multiplier on hover
+
+      // Accumulate rotation angles incrementally (avoids jump on hover speed change)
+      const dt = 0.008; // Matches s.t increment
+      s.rotAng += (0.5 / 3) * s.smoothHoverSpeed * dt;
+      s.angAnim += (1.3 / 3) * s.smoothHoverSpeed * dt;
+      const mobileAlpha = 0.5; // Ray/wave opacity multiplier
 
       // ——— Background ———
       const bgR = lerp(255, 2, prog) | 0;
@@ -328,7 +340,7 @@ export default function DayNightBackground({
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
         for (let wi = 0; wi < 4; wi++) {
-          const phase = (t * (0.16 / 1.5) + wi / 4) % 1; // Wave lifecycle position (0..1)
+          const phase = (t * (0.16 / 3) + wi / 4) % 1; // Wave lifecycle position (0..1)
           const env = envelope(phase, 0.5, 1.2); // Brightness envelope: fade in then out
           if (env < 0.002) continue;
           const eased = 0.5 - 0.5 * Math.cos(phase * Math.PI); // Smooth expansion curve
@@ -349,7 +361,7 @@ export default function DayNightBackground({
               y: CY + Math.sin(a) * (baseR + ro + so),
             });
           }
-          const na = night;
+          const na = night * mobileAlpha; // Wave opacity, scaled by night progress and mobile factor
           catmull(ctx, pts);
           ctx.strokeStyle = `rgba(30,80,220,${(env * 0.1 * na).toFixed(3)})`;
           ctx.lineWidth = sw * 5;
@@ -378,9 +390,9 @@ export default function DayNightBackground({
       if (day > 0.01) {
         const rc = rayCanvasRef.current!;
         const rx = rc.getContext('2d')!;
-        const rotAng = t * (0.5 / 3) * hoverSpeed; // Current rotation angle of the ray group
-        const angAnim = t * (1.3 / 3) * hoverSpeed; // Phase for per-ray angular wobble
-        const rayAlpha = 0.45 * day; // Ray opacity, fades out during night transition
+        const rotAng = s.rotAng; // Accumulated rotation angle of the ray group
+        const angAnim = s.angAnim; // Accumulated phase for per-ray angular wobble
+        const rayAlpha = 0.45 * day * mobileAlpha; // Ray opacity, fades out during night transition
         const scale = 1 + hoverPulse; // Hover-driven size multiplier
 
         for (let i = 0; i < NUM_RAYS; i++) {

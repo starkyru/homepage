@@ -11,7 +11,7 @@ export default function HomePage() {
       <a
         href='https://docs.google.com/document/d/1FozMEumbKlGOmrFjOYAsLtrpIC0WKh1Y/export?format=pdf'
         title='Download resume as PDF'
-        className='fixed right-6 top-6 z-50 rounded-lg bg-white/80 p-2 shadow-lg transition-all hover:opacity-80 dark:bg-gray-800/80'
+        className='fixed right-6 top-6 z-50 rounded-lg bg-white/80 p-2 text-gray-900 shadow-lg transition-all hover:opacity-80 dark:bg-gray-800/80 dark:text-white'
       >
         <PdfIcon size={36} />
       </a>
