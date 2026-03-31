@@ -239,8 +239,8 @@ export default function DayNightBackground({
       }
       if (waveBtnRef.current) {
         const r = Math.max(SUN_R, MOON_R) + 18;
-        waveBtnRef.current.style.left = `${cx - r}px`;
-        waveBtnRef.current.style.top = `${cy + r + 12}px`;
+        waveBtnRef.current.style.left = `${cx + r + 8}px`;
+        waveBtnRef.current.style.top = `${cy - r}px`;
         waveBtnRef.current.style.width = `${r * 2}px`;
         waveBtnRef.current.style.height = `${r * 2}px`;
       }
