@@ -1,4 +1,4 @@
-# Ilia Dzhiubanskii — Senior Software Engineer
+# Ilia Dzhiubanskii — Senior/Lead Software Engineer
 
 ## Who am I?
 
