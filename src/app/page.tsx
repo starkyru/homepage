@@ -4,7 +4,7 @@ import UnderlineLink from '@/components/links/UnderlineLink';
 import PdfIcon from '@/components/PdfIcon';
 import Resume from '@/components/Resume';
 
-export default async function HomePage() {
+export default function HomePage() {
   return (
     <main>
       <a
