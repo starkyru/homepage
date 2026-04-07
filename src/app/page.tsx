@@ -1,11 +1,10 @@
-import * as React from 'react';
-
 import EmailDecode from '@/components/EmailDecode';
+import GallerySlideshow from '@/components/GallerySlideshow';
 import UnderlineLink from '@/components/links/UnderlineLink';
 import PdfIcon from '@/components/PdfIcon';
 import Resume from '@/components/Resume';
 
-export default function HomePage() {
+export default async function HomePage() {
   return (
     <main>
       <a
@@ -15,6 +14,7 @@ export default function HomePage() {
       >
         <PdfIcon size={36} />
       </a>
+      <GallerySlideshow />
       <div className='mx-auto max-w-4xl px-4 py-12'>
         <Resume />
         <EmailDecode />
