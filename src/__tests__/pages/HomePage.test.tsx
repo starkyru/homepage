@@ -5,6 +5,8 @@ import '@testing-library/jest-dom';
 
 import HomePage from '@/app/page';
 
+jest.mock('@/components/GallerySlideshow', () => () => null);
+
 describe('Homepage', () => {
   it('renders the resume and PDF download link', () => {
     render(<HomePage />);
