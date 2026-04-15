@@ -2,11 +2,19 @@ import fs from 'fs';
 import path from 'path';
 
 function obfuscateEmail(html: string): string {
-  // Replace plain-text email with a span that JS will decode on the client
+  const obfuscate = (user: string, domain: string) =>
+    `<span class="email-protected" data-u="${btoa(user)}" data-d="${btoa(domain)}">[email protected]</span>`;
+
+  // First: replace mailto anchor tags so the href email doesn't corrupt HTML
+  html = html.replace(
+    /<a\b[^>]*href="mailto:([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})"[^>]*>[\s\S]*?<\/a>/gi,
+    (_, user: string, domain: string) => obfuscate(user, domain),
+  );
+
+  // Then: replace remaining plain-text emails
   return html.replace(
     /([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
-    (_, user: string, domain: string) =>
-      `<span class="email-protected" data-u="${btoa(user)}" data-d="${btoa(domain)}">[email protected]</span>`,
+    (_, user: string, domain: string) => obfuscate(user, domain),
   );
 }
 
