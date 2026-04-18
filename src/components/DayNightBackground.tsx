@@ -11,7 +11,6 @@ import {
 } from 'react';
 
 import PoolMode from '@/components/PoolMode';
-import WaveIcon from '@/components/WaveIcon';
 
 // ——— Theme context ———
 const ThemeContext = createContext<{ isDark: boolean; toggle: () => void }>({
@@ -154,7 +153,7 @@ export default function DayNightBackground({
   const rayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const moonCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const movingStarsRef = useRef<MovingStar[]>([]);
-  const [poolActive, setPoolActive] = useState(false);
+  const [poolActive] = useState(false);
 
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -189,14 +188,6 @@ export default function DayNightBackground({
     const dark = s.target === 1;
     setIsDark(dark);
     localStorage.setItem('theme', dark ? 'dark' : 'light');
-  }, []);
-
-  const togglePool = useCallback(() => {
-    setPoolActive((prev) => {
-      const next = !prev;
-      localStorage.setItem('poolMode', next ? 'on' : 'off');
-      return next;
-    });
   }, []);
 
   // Sync dark class on <html>
@@ -670,31 +661,6 @@ export default function DayNightBackground({
           padding: 0,
         }}
       />
-      <button
-        ref={waveBtnRef}
-        onClick={togglePool}
-        aria-label={poolActive ? 'Exit pool mode' : 'Enter pool mode'}
-        style={{
-          position: 'fixed',
-          borderRadius: '50%',
-          border: 'none',
-          background: poolActive
-            ? isDark
-              ? 'rgba(55,115,240,0.3)'
-              : 'rgba(255,195,0,0.3)'
-            : 'transparent',
-          cursor: 'pointer',
-          zIndex: 15,
-          padding: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: isDark ? '#8aaad0' : '#b08830',
-          transition: 'background 300ms, color 300ms',
-        }}
-      >
-        <WaveIcon size={18} />
-      </button>
       <PoolMode active={poolActive} contentRef={contentRef} />
       <div ref={contentRef} style={{ position: 'relative' }}>
         {children}
