@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const API_URL = 'https://gallery.ilia.to/api/images';
+const API_URL = 'https://overtone.art/api/images';
 
 export async function GET() {
   try {

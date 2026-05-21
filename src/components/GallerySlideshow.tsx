@@ -8,7 +8,7 @@ interface GalleryImage {
   thumbnailPath: string;
 }
 
-const UPLOAD_URL = 'https://gallery.ilia.to/uploads';
+const UPLOAD_URL = 'https://overtone.art/uploads';
 
 export default function GallerySlideshow() {
   const [images, setImages] = useState<
@@ -53,7 +53,7 @@ export default function GallerySlideshow() {
   return (
     <div className='fixed right-6 top-24 z-40 hidden w-[120px] overflow-hidden rounded-lg shadow-lg xl:block'>
       <a
-        href='https://gallery.ilia.to'
+        href='https://overtone.art/gallery'
         target='_blank'
         rel='noopener noreferrer'
         className='block'
