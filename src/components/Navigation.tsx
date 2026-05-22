@@ -7,12 +7,12 @@ import PdfIcon from '@/components/PdfIcon';
 
 const links = [
   { href: '/', label: 'Home' },
+  { href: '/projects', label: 'My Projects' },
   {
     href: 'https://overtone.art/',
     label: 'My Gallery',
     external: true,
   },
-  { href: '/projects', label: 'My Projects' },
 ];
 
 export default function Navigation() {
