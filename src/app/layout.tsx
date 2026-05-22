@@ -7,6 +7,7 @@ import '@/styles/globals.css';
 import '@/styles/colors.css';
 
 import DayNightBackground from '@/components/DayNightBackground';
+import Navigation from '@/components/Navigation';
 
 import { siteConfig } from '@/constant/config';
 
@@ -64,7 +65,10 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <DayNightBackground>{children}</DayNightBackground>
+        <DayNightBackground>
+          <Navigation />
+          {children}
+        </DayNightBackground>
         <Script
           src='https://stats.ilia.to/script.js'
           data-website-id='9cbf542a-4bc0-40c5-a310-ddce1f02a4e9'
