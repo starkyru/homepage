@@ -3,7 +3,7 @@ import path from 'path';
 
 function obfuscateEmail(html: string): string {
   const obfuscate = (user: string, domain: string) =>
-    `<span class="email-protected" data-u="${btoa(user)}" data-d="${btoa(domain)}">[email protected]</span>`;
+    `<span class="email-protected" data-u="${btoa(user)}" data-d="${btoa(domain)}">[click to see email]</span>`;
 
   // First: replace mailto anchor tags so the href email doesn't corrupt HTML
   html = html.replace(

@@ -53,7 +53,7 @@ export default function GallerySlideshow() {
   return (
     <div className='fixed right-6 top-24 z-40 hidden w-[120px] overflow-hidden rounded-lg shadow-lg xl:block'>
       <a
-        href='https://overtone.art/gallery'
+        href='https://overtone.art/'
         target='_blank'
         rel='noopener noreferrer'
         className='block'

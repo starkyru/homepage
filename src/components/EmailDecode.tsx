@@ -7,7 +7,11 @@ export default function EmailDecode() {
     document.querySelectorAll('.email-protected').forEach((el) => {
       const u = atob((el as HTMLElement).dataset.u ?? '');
       const d = atob((el as HTMLElement).dataset.d ?? '');
-      el.textContent = u + '@' + d;
+      const email = u + '@' + d;
+      const link = document.createElement('a');
+      link.href = 'mailto:' + email;
+      link.textContent = email;
+      el.replaceWith(link);
     });
   }, []);
 

@@ -410,7 +410,7 @@ export default function DayNightBackground({
       }
 
       // ——— DAY: Sun rays ———
-      if (day > 0.01) {
+      if (day > 0.01 && !s.mobile) {
         const rc = rayCanvasRef.current!;
         const rx = rc.getContext('2d')!;
         const rotAng = s.rotAng; // Accumulated rotation angle of the ray group
@@ -502,7 +502,7 @@ export default function DayNightBackground({
       }
 
       // ——— Sun circle ———
-      if (day > 0.01) {
+      if (day > 0.01 && !s.mobile) {
         const sunScale = Math.max(0, 1 - prog * 1.8); // Shrinks to 0 during transition to night
         const sunR = SUN_R * (1 + hoverPulse) * sunScale; // Effective sun radius with hover pulse
         if (sunR > 0.5) {
@@ -521,7 +521,7 @@ export default function DayNightBackground({
       }
 
       // ——— Moon (offscreen compositing for crescent) ———
-      if (night > 0.15) {
+      if (night > 0.15 && !s.mobile) {
         const moonAlpha = Math.min(1, (night - 0.15) / 0.6); // Moon fade-in (0..1), delayed until night > 0.15
         const moonHoverScale = s.hovered // 30% bigger + subtle pulse on hover
           ? 1.3 + Math.sin(t * 4) * 0.05
@@ -651,6 +651,7 @@ export default function DayNightBackground({
           stRef.current.hovered = false;
         }}
         aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        className='hidden md:block'
         style={{
           position: 'fixed',
           borderRadius: '50%',
