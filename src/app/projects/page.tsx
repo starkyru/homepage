@@ -55,6 +55,14 @@ const sections: Section[] = [
           'NestJS, TypeORM, PostgreSQL, Redis, Bull, Socket.io, Swagger; React + Vite frontend, TanStack Query, Zustand, Tailwind CSS; Anthropic SDK',
       },
       {
+        name: 'ASO Audit Agent',
+        repo: 'aso-audit',
+        description:
+          'AI-powered App Store Optimization audit tool. Paste an App Store URL, get a scored audit with actionable recommendations. Two-agent architecture with server-side tool execution, progressive JSON streaming, and server-side score recalculation.',
+        tools:
+          'NestJS, Mastra, Next.js 15, React 19, Tailwind CSS, @stream-schema/core, Zod, TypeScript monorepo (Turbo), NVIDIA NIM / Anthropic Claude',
+      },
+      {
         name: 'my-gallery',
         description:
           'Photography gallery and storefront for digital originals and fine-art prints. Plugin-based payment/print providers.',
