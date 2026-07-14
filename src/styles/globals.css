@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Gold-on-black scrollbar for the hanging-chain stage */
+.chain-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #e0a458 #100e0b;
+}
+.chain-scroll::-webkit-scrollbar {
+  height: 10px;
+  background: #100e0b;
+}
+.chain-scroll::-webkit-scrollbar-track {
+  background: #100e0b;
+}
+.chain-scroll::-webkit-scrollbar-thumb {
+  background: #e0a458;
+  border-radius: 6px;
+  border: 2px solid #100e0b;
+}
+.chain-scroll::-webkit-scrollbar-thumb:hover {
+  background: #f0b968;
+}
+
 /* Initial background matches theme — blocking script sets .dark before paint */
 html {
   background: #fffefa;
