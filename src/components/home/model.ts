@@ -315,9 +315,10 @@ export function buildScene(vh: number): Scene {
   // zero → every card hangs level at rest. Snapping a chip off breaks that
   // balance, so the card tilts toward the weight that remains; the heavier /
   // further the removed chip, the bigger the swing.
-  const STRUT_MIN = 15; // each chip hangs off a short rigid rod, 15–40px long
-  const STRUT_MAX = 40;
+  const STRUT_MIN = 26; // rod long enough the disc (r=20) fully clears the border
+  const STRUT_MAX = 44;
   const TOP_MARGIN = 48; // keep chips off the top edge (the rope)
+  const CORNER = 40; // keep chips off the rounded corners
   const byCard: number[][] = cards.map(() => []);
   CHIPS.forEach((ch, gi) => byCard[ch.card].push(gi));
   byCard.forEach((list, ci) => {
@@ -327,8 +328,9 @@ export function buildScene(vh: number): Scene {
     const f = card.attach;
     const hwL = f * CARD_W; // pivot → left edge
     const hwR = (1 - f) * CARD_W; // pivot → right edge
-    const segL = cardH - TOP_MARGIN; // left edge (skipping the top)
-    const segB = CARD_W; // bottom edge
+    // keep chips off the rounded corners: usable spans are inset by CORNER.
+    const segL = cardH - CORNER - TOP_MARGIN; // left edge (below the top, above the corner)
+    const segB = CARD_W - 2 * CORNER; // bottom edge (between the corners)
     const total = segL + segB + segL; // left + bottom + right
     const k = list.length;
     // 1) place each chip (even slot + bounded jitter → spread, never overlaps)
@@ -346,13 +348,13 @@ export function buildScene(vh: number): Scene {
         nx = -1;
         ny = 0;
       } else if (d < segL + segB) {
-        bx = -hwL + (d - segL);
+        bx = -hwL + CORNER + (d - segL);
         by = cardH;
         nx = 0;
         ny = 1;
       } else {
         bx = hwR;
-        by = cardH - (d - segL - segB);
+        by = TOP_MARGIN + (d - segL - segB);
         nx = 1;
         ny = 0;
       }
@@ -406,6 +408,7 @@ export function buildScene(vh: number): Scene {
     h: vh,
     gravity: 1400,
     damping: 0.965,
+    floor: 10, // = scrollbar height, so snapped discs rest right on top of it
   };
 
   const rest = points.map((p) => ({ ...p }));

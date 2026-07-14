@@ -80,13 +80,30 @@ export default function SkillChain({ scene, registerReset }: Props) {
     [],
   );
 
-  // Prev / next: centre the target item in the region right of the panel.
+  // Prev / next: from wherever the view currently sits, centre the next box in
+  // the pressed direction (so it always steps relative to the nearest box, not
+  // a stale index that wheel / drag scrolling would desync).
   const go = useCallback(
     (dir: number) => {
+      const el = scrollRef.current;
+      if (!el) return;
       const items = scene.itemsX;
-      const i = Math.max(0, Math.min(items.length - 1, indexRef.current + dir));
-      indexRef.current = i;
       const clearCenter = PANEL_W + (window.innerWidth - PANEL_W) / 2;
+      const cur = el.scrollLeft + clearCenter; // content x currently centred
+      let i: number;
+      if (dir > 0) {
+        i = items.findIndex((x) => x > cur + 2);
+        if (i < 0) i = items.length - 1; // already past the last
+      } else {
+        i = 0;
+        for (let k = items.length - 1; k >= 0; k--) {
+          if (items[k] < cur - 2) {
+            i = k;
+            break;
+          }
+        }
+      }
+      indexRef.current = i;
       scrollToLeft(items[i] - clearCenter);
     },
     [scene, scrollToLeft],
@@ -153,6 +170,7 @@ export default function SkillChain({ scene, registerReset }: Props) {
                   stroke={palette.amber}
                   strokeWidth={2.5}
                   strokeLinecap='round'
+                  strokeDasharray='1 5'
                 />
               );
             })}
@@ -196,20 +214,8 @@ export default function SkillChain({ scene, registerReset }: Props) {
                   willChange: 'transform',
                 }}
               >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'baseline',
-                    gap: 8,
-                  }}
-                >
-                  <span style={{ fontSize: 17, fontWeight: 600 }}>
-                    {c.exp.company}
-                  </span>
-                  <span style={{ fontSize: 11.5, color: palette.amber }}>
-                    {c.exp.period}
-                  </span>
+                <div style={{ fontSize: 17, fontWeight: 600 }}>
+                  {c.exp.company}
                 </div>
                 <div
                   style={{
@@ -220,6 +226,15 @@ export default function SkillChain({ scene, registerReset }: Props) {
                   }}
                 >
                   {c.exp.role}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11.5,
+                    color: 'rgba(236,231,221,.5)',
+                    marginTop: 2,
+                  }}
+                >
+                  {c.exp.period}
                 </div>
                 <p
                   style={{

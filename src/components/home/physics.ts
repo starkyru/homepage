@@ -31,6 +31,7 @@ export interface World {
   h: number;
   gravity: number; // px / s^2
   damping: number; // velocity retention, 0..1
+  floor: number; // px above the bottom edge where things come to rest
 }
 
 const DT = 1 / 60;
@@ -49,9 +50,11 @@ export function integrate(world: World): void {
     // Walls: keep balls/chips inside the horizontal span.
     if (p.x < p.r) p.x = p.r;
     else if (p.x > world.w - p.r) p.x = world.w - p.r;
-    // Floor: snapped items pile up at the bottom instead of vanishing.
-    if (p.y > world.h - p.r) {
-      p.y = world.h - p.r;
+    // Floor: snapped items pile up on it instead of vanishing. Sits a little
+    // above the bottom edge so the pile clears the scrollbar.
+    const floorY = world.h - world.floor;
+    if (p.y > floorY - p.r) {
+      p.y = floorY - p.r;
       p.py = p.y + vy * 0.4; // small bounce
       p.px = p.x + vx * 0.6; // ground friction
     }

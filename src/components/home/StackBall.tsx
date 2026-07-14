@@ -15,6 +15,7 @@ interface Props {
 }
 
 const BALL_R = 18;
+const DISC_GAP = 6; // min clear space between discs so they never look stuck together
 const FRICTION = 0.96; // bleeds off speed so the pile settles
 const GRAVITY = 0.25; // discs settle toward the bottom of the ball
 const INERTIA = 0.5; // how much the discs lag when the big ball moves
@@ -154,7 +155,7 @@ export default function StackBall({
           const dx = s.x[j] - s.x[i];
           const dy = s.y[j] - s.y[i];
           const dist = Math.hypot(dx, dy);
-          const min = BALL_R * 2;
+          const min = BALL_R * 2 + DISC_GAP;
           if (dist < min && dist > 0) {
             const nx = dx / dist;
             const ny = dy / dist;

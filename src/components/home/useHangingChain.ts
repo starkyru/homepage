@@ -3,6 +3,11 @@ import { RefObject, useCallback, useEffect, useRef } from 'react';
 import type { Scene } from './model';
 import { step } from './physics';
 
+// Round transforms to 0.1px so a settled node produces an identical string
+// frame-to-frame; we then skip rewriting it, which lets the browser's native
+// `title` tooltip appear (constant style mutation keeps resetting its timer).
+const r1 = (v: number) => Math.round(v * 10) / 10;
+
 interface PositionedNode {
   el: HTMLElement;
   point: number;
@@ -15,6 +20,7 @@ interface PositionedNode {
   af: number; // card attach fraction across the top (rotation pivot / origin)
   bl: number;
   br: number;
+  lastT: string; // last transform written (skip identical writes)
 }
 
 /**
@@ -70,6 +76,7 @@ export function useHangingChain(
         af: Number(el.dataset.af ?? 0.5),
         bl: Number(el.dataset.bl ?? -1),
         br: Number(el.dataset.br ?? -1),
+        lastT: '',
       });
     });
     const ropeLines = Array.from(
@@ -127,19 +134,28 @@ export function useHangingChain(
         });
         // origin is the attach fraction (set as transform-origin in the JSX), so
         // translate the top-left there and rotate about it.
-        n.el.style.transform = `translate(${p.x - n.af * n.w}px, ${p.y}px) rotate(${deg}deg)`;
+        const tf = `translate(${r1(p.x - n.af * n.w)}px, ${r1(p.y)}px) rotate(${r1(deg)}deg)`;
+        if (tf !== n.lastT) {
+          n.el.style.transform = tf;
+          n.lastT = tf;
+        }
       }
       // pass 2 — everything else. A bolted chip spins with its card (rigid body
       // = orbit from physics + the card's own angle); a detached one tumbles free.
       for (const n of nodes) {
         if (n.card) continue;
         const p = world.points[n.point];
-        const base = `translate(${p.x - n.w / 2}px, ${p.y - n.h / 2}px)`;
+        const base = `translate(${r1(p.x - n.w / 2)}px, ${r1(p.y - n.h / 2)}px)`;
+        let tf: string;
         if (n.chip && !snapped.has(n.id)) {
           const f = frames.get(n.cardPv);
-          n.el.style.transform = f ? `${base} rotate(${f.deg}deg)` : base;
+          tf = f ? `${base} rotate(${r1(f.deg)}deg)` : base;
         } else {
-          n.el.style.transform = base;
+          tf = base;
+        }
+        if (tf !== n.lastT) {
+          n.el.style.transform = tf;
+          n.lastT = tf;
         }
       }
       for (const line of ropeLines) {
@@ -176,7 +192,10 @@ export function useHangingChain(
     };
 
     // Scrolling the (parent) container imparts inertia: the hanging masses lag
-    // behind the anchors when the scroll speed changes, so they swing.
+    // behind the anchors when the scroll speed changes, so they swing. The kick
+    // is scaled by each point's inverse mass (im), so a heavier body — a bigger
+    // card, whose corners carry more mass — gets a smaller velocity change and
+    // swings less than a small, light one.
     const scroller = stage.parentElement;
     let prevScroll = scroller?.scrollLeft ?? 0;
     let prevVel = 0;
@@ -191,7 +210,7 @@ export function useHangingChain(
       const k = 0.16;
       for (const p of world.points) {
         if (p.pinned || p.held) continue;
-        p.px += acc * k; // nudge previous pos → adds a horizontal velocity
+        p.px += acc * k * p.im; // heavier point (smaller im) → smaller kick → more inertia
       }
     };
 
