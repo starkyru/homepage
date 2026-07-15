@@ -6,7 +6,6 @@ import '@/styles/globals.css';
 // !STARTERCONF This is for demo purposes, remove @/styles/colors.css import immediately
 import '@/styles/colors.css';
 
-import DayNightBackground from '@/components/DayNightBackground';
 import Navigation from '@/components/Navigation';
 
 import { siteConfig } from '@/constant/config';
@@ -50,25 +49,19 @@ export const metadata: Metadata = {
   // ],
 };
 
+// The whole site now uses the single "hanging chain" palette (dark amber on
+// near-black). `dark` is pinned so existing `dark:` variants render in that
+// theme; the day/night canvas + toggle were removed.
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark')}catch(e){}})()`,
-          }}
-        />
-      </head>
+    <html className='dark' suppressHydrationWarning>
       <body>
-        <DayNightBackground>
-          <Navigation />
-          {children}
-        </DayNightBackground>
+        <Navigation />
+        {children}
         <Script
           src='https://stats.ilia.to/script.js'
           data-website-id='9cbf542a-4bc0-40c5-a310-ddce1f02a4e9'

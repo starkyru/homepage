@@ -23,25 +23,23 @@
   background: #f0b968;
 }
 
-/* Initial background matches theme — blocking script sets .dark before paint */
-html {
-  background: #fffefa;
-}
-
+/* Single site-wide palette (hanging-chain): dark amber on near-black. */
+html,
 html.dark {
-  background: #020814;
+  background: #100e0b;
 }
 
-/* Fade body in after canvas initializes */
-body {
-  opacity: 0;
-  animation: fadeIn 0.3s ease 0.05s forwards;
+/* Projects page cards — hover lift on the dark palette. */
+.project-card {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
-
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-  }
+.project-card:hover {
+  background: #221d16;
+  border-color: rgba(224, 164, 88, 0.35);
+  transform: translateY(-2px);
 }
 
 :root {

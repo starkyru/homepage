@@ -1,6 +1,11 @@
 import { Metadata } from 'next';
+import type { CSSProperties } from 'react';
 import { FiExternalLink, FiLock } from 'react-icons/fi';
 import { VscGithubAlt } from 'react-icons/vsc';
+
+import { homeFontVars } from '@/lib/fonts';
+
+import { palette } from '@/components/home/model';
 
 export const metadata: Metadata = {
   title: 'My Projects',
@@ -8,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 const GITHUB = 'https://github.com/starkyru';
+const serif = 'var(--font-newsreader), Georgia, serif';
 
 interface Project {
   name: string;
@@ -161,73 +167,194 @@ const sections: Section[] = [
 
 export default function ProjectsPage() {
   return (
-    <main className='mx-auto max-w-4xl px-4 py-20'>
-      <h1 className='mb-3 text-3xl font-bold text-gray-900 dark:text-white md:text-4xl'>
-        My Projects
-      </h1>
-      <p className='mb-8 text-sm text-gray-500 dark:text-gray-400'>
-        Some of these projects are experiments and aren&apos;t released, some
-        have real value. Some aren&apos;t even in this list.
-      </p>
+    <main
+      className={homeFontVars}
+      style={{
+        minHeight: '100dvh',
+        background: palette.bg,
+        color: palette.text,
+        fontFamily: 'var(--font-instrument), system-ui, sans-serif',
+      }}
+    >
+      <div
+        style={{ maxWidth: 880, margin: '0 auto', padding: '104px 24px 80px' }}
+      >
+        <div
+          style={{
+            fontFamily: serif,
+            fontStyle: 'italic',
+            fontSize: 18,
+            color: palette.amber,
+            marginBottom: 12,
+          }}
+        >
+          ilia.to
+        </div>
+        <h1
+          style={{
+            margin: 0,
+            fontFamily: serif,
+            fontWeight: 400,
+            fontSize: 42,
+            lineHeight: 1.05,
+            letterSpacing: '-.01em',
+          }}
+        >
+          My Projects
+        </h1>
+        <p
+          style={{
+            margin: '14px 0 0',
+            fontSize: 14,
+            lineHeight: 1.6,
+            color: 'rgba(236,231,221,.6)',
+            maxWidth: 560,
+          }}
+        >
+          Some of these projects are experiments and aren&apos;t released, some
+          have real value. Some aren&apos;t even in this list.
+        </p>
 
-      {sections.map((section) => (
-        <section key={section.title} className='mb-12'>
-          <h2 className='mb-6 border-b border-gray-200 pb-2 text-xl font-semibold text-gray-800 dark:border-gray-700 dark:text-gray-200 md:text-2xl'>
-            {section.title}
-          </h2>
-          <div className='grid gap-4'>
-            {section.projects.map((project) => (
-              <div
-                key={project.name}
-                className='rounded-xl border border-gray-200 bg-white/60 p-5 backdrop-blur-sm transition-colors hover:bg-white/80 dark:border-gray-700 dark:bg-gray-800/60 dark:hover:bg-gray-800/80'
-              >
-                <div className='mb-2 flex items-center gap-3'>
-                  <h3 className='text-lg font-bold text-gray-900 dark:text-white'>
-                    {project.name}
-                  </h3>
-                  {project.repo && (
-                    <a
-                      href={`${GITHUB}/${project.repo}`}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      className='inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                    >
-                      <VscGithubAlt className='h-3.5 w-3.5' />
-                      GitHub
-                    </a>
-                  )}
-                  {project.private && (
-                    <span className='inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500 dark:bg-gray-700/60 dark:text-gray-400'>
-                      <FiLock className='h-3 w-3' />
-                      Private
-                    </span>
-                  )}
-                  {project.url && (
-                    <a
-                      href={project.url}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      className='inline-flex items-center gap-1 rounded-md bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-300 dark:hover:bg-primary-900/50'
-                    >
-                      <FiExternalLink className='h-3 w-3' />
-                      Live
-                    </a>
-                  )}
+        {sections.map((section) => (
+          <section key={section.title} style={{ marginTop: 48 }}>
+            <h2 style={sectionTitle}>{section.title}</h2>
+            <div style={{ display: 'grid', gap: 14 }}>
+              {section.projects.map((project) => (
+                <div key={project.name} className='project-card' style={card}>
+                  <div style={cardHead}>
+                    <h3 style={cardName}>{project.name}</h3>
+                    {project.repo && (
+                      <a
+                        href={`${GITHUB}/${project.repo}`}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        style={badgeLink}
+                      >
+                        <VscGithubAlt size={13} />
+                        GitHub
+                      </a>
+                    )}
+                    {project.private && (
+                      <span style={badgeMuted}>
+                        <FiLock size={12} />
+                        Private
+                      </span>
+                    )}
+                    {project.url && (
+                      <a
+                        href={project.url}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        style={badgeLive}
+                      >
+                        <FiExternalLink size={12} />
+                        Live
+                      </a>
+                    )}
+                  </div>
+                  <p style={cardDesc}>{project.description}</p>
+                  <p style={cardTools}>
+                    <span style={{ color: palette.amber, fontWeight: 500 }}>
+                      Tools:
+                    </span>{' '}
+                    {project.tools}
+                  </p>
                 </div>
-                <p className='mb-2 text-sm text-gray-600 dark:text-gray-400'>
-                  {project.description}
-                </p>
-                <p className='text-xs text-gray-500 dark:text-gray-500'>
-                  <span className='font-medium text-gray-600 dark:text-gray-400'>
-                    Tools:
-                  </span>{' '}
-                  {project.tools}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-      ))}
+              ))}
+            </div>
+          </section>
+        ))}
+
+        <p
+          style={{
+            marginTop: 56,
+            fontSize: 12,
+            color: 'rgba(236,231,221,.35)',
+          }}
+        >
+          © 2026 Ilia Dzhiubanskii · Charlotte, NC
+        </p>
+      </div>
     </main>
   );
 }
+
+const sectionTitle: CSSProperties = {
+  margin: '0 0 20px',
+  paddingBottom: 10,
+  borderBottom: `1px solid ${palette.hairline}`,
+  fontFamily: serif,
+  fontStyle: 'italic',
+  fontWeight: 400,
+  fontSize: 26,
+  color: palette.amber,
+};
+
+const card: CSSProperties = {
+  background: palette.cardBg,
+  border: `1px solid ${palette.cardBorder}`,
+  borderRadius: 12,
+  padding: '18px 22px',
+};
+
+const cardHead: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  flexWrap: 'wrap',
+  gap: 10,
+  marginBottom: 8,
+};
+
+const cardName: CSSProperties = {
+  margin: 0,
+  fontSize: 17,
+  fontWeight: 600,
+  color: palette.text,
+};
+
+const cardDesc: CSSProperties = {
+  margin: '0 0 10px',
+  fontSize: 13.5,
+  lineHeight: 1.6,
+  color: 'rgba(236,231,221,.72)',
+};
+
+const cardTools: CSSProperties = {
+  margin: 0,
+  fontSize: 12,
+  lineHeight: 1.55,
+  color: 'rgba(236,231,221,.5)',
+};
+
+const badgeBase: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 4,
+  padding: '2px 9px',
+  borderRadius: 999,
+  fontSize: 11.5,
+  fontWeight: 500,
+  textDecoration: 'none',
+  border: '1px solid transparent',
+};
+
+const badgeLink: CSSProperties = {
+  ...badgeBase,
+  background: 'rgba(224,164,88,.1)',
+  border: '1px solid rgba(224,164,88,.28)',
+  color: palette.amber,
+};
+
+const badgeMuted: CSSProperties = {
+  ...badgeBase,
+  background: 'rgba(236,231,221,.06)',
+  border: '1px solid rgba(236,231,221,.14)',
+  color: 'rgba(236,231,221,.55)',
+};
+
+const badgeLive: CSSProperties = {
+  ...badgeBase,
+  background: palette.amber,
+  color: '#1a1408',
+  fontWeight: 600,
+};

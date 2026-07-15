@@ -1,10 +1,16 @@
 'use client';
 
-import { type CSSProperties, useCallback, useEffect, useRef } from 'react';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import {
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import { FiChevronLeft, FiChevronRight, FiChevronUp } from 'react-icons/fi';
 
 import type { Scene } from './model';
-import { palette, PANEL_W, techLogo } from './model';
+import { EXPERIENCE, palette, PANEL_W, techLogo } from './model';
 import SkillChainStackBall from './StackBall';
 import { useHangingChain } from './useHangingChain';
 
@@ -108,6 +114,68 @@ export default function SkillChain({ scene, registerReset }: Props) {
     },
     [scene, scrollToLeft],
   );
+
+  // --- centred-job accordion (between the arrows) --------------------------
+  // `centered` = the experience nearest the viewport centre; `shownJob` is the
+  // one the panel currently displays. When they differ the panel drops down and
+  // pops back up with the new title. `expanded` grows it upward to reveal the
+  // full description; a click or any horizontal scroll sends it back down.
+  const [centered, setCentered] = useState(0);
+  const [shownJob, setShownJob] = useState(0);
+  const [panelUp, setPanelUp] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+  const swapTimer = useRef<number | null>(null);
+
+  const nearestJob = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return 0;
+    const items = scene.itemsX;
+    const clearCenter = PANEL_W + (window.innerWidth - PANEL_W) / 2;
+    const cur = el.scrollLeft + clearCenter;
+    let best = 1; // items[0] is the stack ball — only real cards count
+    let bestD = Infinity;
+    for (let i = 1; i < items.length; i++) {
+      const d = Math.abs(items[i] - cur);
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
+    }
+    return best - 1; // → EXPERIENCE index
+  }, [scene]);
+
+  // Track the centred card on scroll; any horizontal scroll collapses the panel.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      setCentered(nearestJob());
+      setExpanded(false);
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [nearestJob]);
+
+  // Animate the title swap: drop the old title down, then pop the new one up.
+  useEffect(() => {
+    if (centered === shownJob) return;
+    setExpanded(false);
+    setPanelUp(false);
+    if (swapTimer.current != null) window.clearTimeout(swapTimer.current);
+    swapTimer.current = window.setTimeout(() => {
+      setShownJob(centered);
+      setPanelUp(true);
+      swapTimer.current = null;
+    }, 200);
+    return () => {
+      if (swapTimer.current != null) {
+        window.clearTimeout(swapTimer.current);
+        swapTimer.current = null;
+      }
+    };
+  }, [centered, shownJob]);
+
+  const job = EXPERIENCE[shownJob];
 
   return (
     <>
@@ -300,7 +368,7 @@ export default function SkillChain({ scene, registerReset }: Props) {
         </div>
       </div>
 
-      {/* prev / next — centred in the region not covered by the panel */}
+      {/* prev / next + the centred-job accordion panel between them */}
       <div
         style={{
           position: 'fixed',
@@ -308,6 +376,7 @@ export default function SkillChain({ scene, registerReset }: Props) {
           right: 0,
           bottom: 28,
           display: 'flex',
+          alignItems: 'flex-end',
           justifyContent: 'space-between',
           padding: '0 40px',
           pointerEvents: 'none',
@@ -322,6 +391,113 @@ export default function SkillChain({ scene, registerReset }: Props) {
         >
           <FiChevronLeft size={22} />
         </button>
+
+        <div
+          style={{
+            pointerEvents: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            flex: '1 1 auto',
+            minWidth: 0, // allow shrink so the arrows never get pushed off-screen
+            margin: '0 24px', // padding between the panel and the arrows
+            transform: panelUp ? 'translateY(0)' : 'translateY(150%)',
+            opacity: panelUp ? 1 : 0,
+            transition:
+              'transform .22s cubic-bezier(.4,0,.2,1), opacity .22s ease',
+          }}
+        >
+          {/* title bar — always on top; click toggles the accordion */}
+          <button
+            type='button'
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+            aria-label={`${job.company} — ${expanded ? 'hide' : 'show'} details`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              width: '100%',
+              padding: '11px 18px',
+              background: 'rgba(22,19,15,.92)',
+              border: `1px solid ${palette.cardBorder}`,
+              borderRadius: expanded ? '10px 10px 0 0' : 10,
+              color: palette.text,
+              font: 'inherit',
+              cursor: 'pointer',
+              backdropFilter: 'blur(4px)',
+              boxShadow: '0 14px 30px rgba(0,0,0,.4)',
+            }}
+          >
+            <span
+              style={{
+                fontSize: 15,
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {job.company}
+            </span>
+            <FiChevronUp
+              size={18}
+              style={{
+                flexShrink: 0,
+                color: palette.amber,
+                transform: expanded ? 'rotate(180deg)' : 'none',
+                transition: 'transform .25s ease',
+              }}
+            />
+          </button>
+
+          {/* description — grows downward out of the title bar when expanded */}
+          <div
+            style={{
+              maxHeight: expanded ? 340 : 0,
+              opacity: expanded ? 1 : 0,
+              overflow: 'hidden',
+              background: palette.cardBg,
+              border: `1px solid ${palette.cardBorder}`,
+              borderTop: 'none',
+              borderRadius: '0 0 10px 10px',
+              transition: 'max-height .32s ease, opacity .28s ease',
+            }}
+          >
+            <div style={{ padding: '12px 18px 14px' }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: palette.amber,
+                }}
+              >
+                {job.role}
+              </div>
+              <div
+                style={{
+                  fontSize: 11.5,
+                  color: 'rgba(236,231,221,.5)',
+                  marginTop: 2,
+                }}
+              >
+                {job.period}
+              </div>
+              <p
+                style={{
+                  margin: '8px 0 0',
+                  fontSize: 12.5,
+                  lineHeight: 1.5,
+                  color: 'rgba(236,231,221,.72)',
+                }}
+              >
+                {job.blurb}
+              </p>
+            </div>
+          </div>
+        </div>
+
         <button
           type='button'
           aria-label='Next role'
@@ -339,6 +515,7 @@ const navBtn: CSSProperties = {
   pointerEvents: 'auto',
   width: 48,
   height: 48,
+  flexShrink: 0, // keep the circle from squashing into an oval when the panel grows
   borderRadius: '50%',
   border: `1px solid rgba(224,164,88,.5)`,
   background: 'rgba(22,19,15,.85)',

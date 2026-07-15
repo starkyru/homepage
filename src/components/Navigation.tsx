@@ -21,6 +21,20 @@ export default function Navigation() {
   // The home page is a full-bleed, self-contained design with its own header.
   if (pathname === '/') return null;
 
+  if (pathname === '/projects') {
+    return (
+      <nav className='fixed left-4 top-4 z-40 font-primary'>
+        <Link
+          href='/'
+          className='inline-flex items-center gap-2 rounded-lg border border-amber-200/20 bg-[#100e0b]/85 px-3 py-2 text-sm font-medium text-[#ece7dd] shadow-sm backdrop-blur-md transition-colors hover:border-amber-200/40 hover:text-[#e0a458] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e0a458] focus-visible:ring-offset-2 focus-visible:ring-offset-[#100e0b]'
+        >
+          <span aria-hidden='true'>←</span>
+          Back
+        </Link>
+      </nav>
+    );
+  }
+
   return (
     <nav className='fixed left-0 right-0 top-0 z-40 flex justify-center gap-1 border-b border-gray-200 bg-white/70 px-2 py-2 font-primary shadow-sm backdrop-blur-md md:left-1/2 md:right-auto md:-translate-x-1/2 md:rounded-b-xl md:border md:border-t-0 whitespace-nowrap dark:border-gray-700 dark:bg-gray-900/70'>
       {links.map((link) => {
