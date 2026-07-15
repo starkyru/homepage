@@ -46,6 +46,16 @@ export default function SkillChain({ scene, registerReset }: Props) {
       el.scrollLeft = targetRef.current;
       targetRef.current = null;
       rafRef.current = null;
+      if (reExpandRef.current) {
+        reExpandRef.current = false;
+        if (reExpandTimer.current != null)
+          window.clearTimeout(reExpandTimer.current);
+        // wait out the title-swap pop-up, then re-open the accordion
+        reExpandTimer.current = window.setTimeout(() => {
+          setExpanded(true);
+          reExpandTimer.current = null;
+        }, 260);
+      }
       return;
     }
     el.scrollLeft += diff * 0.16;
@@ -72,6 +82,7 @@ export default function SkillChain({ scene, registerReset }: Props) {
       const delta =
         Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
       if (delta === 0) return;
+      reExpandRef.current = false; // manual scroll cancels a pending re-open
       scrollToLeft(delta, true);
       e.preventDefault();
     };
@@ -82,6 +93,8 @@ export default function SkillChain({ scene, registerReset }: Props) {
   useEffect(
     () => () => {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      if (reExpandTimer.current != null)
+        window.clearTimeout(reExpandTimer.current);
     },
     [],
   );
@@ -93,6 +106,8 @@ export default function SkillChain({ scene, registerReset }: Props) {
     (dir: number) => {
       const el = scrollRef.current;
       if (!el) return;
+      // keep the panel open through the jump if it was open when pressed
+      if (expandedRef.current) reExpandRef.current = true;
       const items = scene.itemsX;
       const clearCenter = PANEL_W + (window.innerWidth - PANEL_W) / 2;
       const cur = el.scrollLeft + clearCenter; // content x currently centred
@@ -125,6 +140,15 @@ export default function SkillChain({ scene, registerReset }: Props) {
   const [panelUp, setPanelUp] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const swapTimer = useRef<number | null>(null);
+  // Arrow pressed while expanded → collapse for the scroll, re-open once it
+  // settles. `expandedRef` mirrors `expanded` so `go`/`ease` read it without
+  // taking it as a dependency.
+  const reExpandRef = useRef(false);
+  const reExpandTimer = useRef<number | null>(null);
+  const expandedRef = useRef(false);
+  useEffect(() => {
+    expandedRef.current = expanded;
+  }, [expanded]);
 
   const nearestJob = useCallback(() => {
     const el = scrollRef.current;
@@ -312,7 +336,7 @@ export default function SkillChain({ scene, registerReset }: Props) {
                     lineHeight: 1.5,
                   }}
                 >
-                  {c.exp.blurb}
+                  {c.exp.short}
                 </p>
               </article>
             );
@@ -410,7 +434,10 @@ export default function SkillChain({ scene, registerReset }: Props) {
           {/* title bar — always on top; click toggles the accordion */}
           <button
             type='button'
-            onClick={() => setExpanded((v) => !v)}
+            onClick={() => {
+              reExpandRef.current = false; // manual toggle overrides auto re-open
+              setExpanded((v) => !v);
+            }}
             aria-expanded={expanded}
             aria-label={`${job.company} — ${expanded ? 'hide' : 'show'} details`}
             style={{
@@ -457,7 +484,8 @@ export default function SkillChain({ scene, registerReset }: Props) {
             style={{
               maxHeight: expanded ? 340 : 0,
               opacity: expanded ? 1 : 0,
-              overflow: 'hidden',
+              overflowY: expanded ? 'auto' : 'hidden', // scroll when full text exceeds the cap
+              overflowX: 'hidden',
               background: palette.cardBg,
               border: `1px solid ${palette.cardBorder}`,
               borderTop: 'none',
@@ -490,6 +518,7 @@ export default function SkillChain({ scene, registerReset }: Props) {
                   fontSize: 12.5,
                   lineHeight: 1.5,
                   color: 'rgba(236,231,221,.72)',
+                  whiteSpace: 'pre-line', // keep intro + bullet lines from ilia.to
                 }}
               >
                 {job.blurb}

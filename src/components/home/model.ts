@@ -46,45 +46,91 @@ export interface Experience {
   company: string;
   period: string;
   role: string;
-  blurb: string; // longer copy, drawn from the résumé
+  short: string; // one-liner shown on the hanging card
+  blurb: string; // full copy shown in the accordion, drawn from ilia.to
 }
 
 // Ordered most-recent → oldest (drives left → right placement on the chain).
 export const EXPERIENCE: Experience[] = [
   {
-    company: 'CrossCountry Mortgage',
-    period: '2023–26',
-    role: 'Senior Software Engineer',
+    company: 'Overtone Arr',
+    period: '2026–now',
+    role: 'Founder / Builder',
+    short:
+      'Full-stack art gallery & print-on-demand storefront — Next.js/NestJS, Stripe, AI + MCP, React Native app.',
     blurb:
-      'Top performer on the LoanOfficer One platform — an internal Vue/TypeScript system serving 3,500+ loan officers at the #1 US retail mortgage company. Architected Cube, a user-configurable interface for querying loans and users; drove a 3× load-time improvement, added full TypeScript coverage to the API layer, and extracted a Storybook component library (configurable table, column selector, drag-and-drop tree) adopted across company projects.',
+      'Built a full-stack art gallery and print-on-demand storefront (Next.js, NestJS, PostgreSQL) with multi-provider Stripe payments and automated Prodigi/Printify fulfillment. Added deep AI integration — chat, an MCP server, and automated description generation via a two-stage LLM call. Shipped a companion mobile app in React Native.',
+  },
+  {
+    company: 'CrossCountry Mortgage',
+    period: '2023–2026',
+    role: 'Senior Software Engineer',
+    short:
+      'Vue/TS platform for 3,500+ loan officers — 3× faster loads, Cube analytics UI, shared Storybook library.',
+    blurb: `Top performer on the LoanOfficer One platform - an internal Vue/TypeScript system serving more than 3,500 loan officers nationwide at the #1 US retail mortgage company. I worked across multiple teams that consisted of product owners, API developers, CSS developers, a Scrum Master, and other UI developers. This project comprises hundreds of screens with weekly deployments.
+
+• Discussed and enforced coding standards and architecture guidelines. Established comprehensive lint rules and code quality standards, reducing code-style inconsistencies and improving long-term maintainability across the codebase.
+• Achieved a three-time improvement in application load time through performance profiling and optimization. Greatly improved table view performance by finding a weak spot and making a fix.
+• Added full TypeScript coverage to the networking (API) subsystem, significantly reducing runtime errors caused by type mismatches, and improved AI adoption.
+• Implemented optimistic, debounced network calls with request caching to cut redundant network traffic and improve responsiveness, which improved performance by at least one and a half times in some areas.
+• Championed AI-assisted engineering workflows (Copilot with Claude, Codex), integrating automated code review, test generation, and documentation into the development process and improving delivery speed up to two times.
+• Designed and implemented the frontend architecture for Cube, a configurable analytics interface for querying loan and user datasets - one of the platform's largest features.
+• Extracted tens of shared components into the component library via Storybook (configurable table, column selector, drag-and-drop tree view), adopted across multiple company projects.
+• Built end-to-end test coverage using the Playwright framework and unit tests using Jest.
+• Partnered with tech support and backend teams to evaluate and resolve production incidents, reducing recurring UI errors and stabilizing critical workflows used by thousands of loan officers. Diagnosed and fixed UI defects, race conditions in parallel API call queues (e.g., Cube), and data inconsistencies by collaborating with product owners, QA, and tech support. Eliminated recurring race condition issues in Cube, including defects introduced by outsourced contributors.
+• Partnered directly with business stakeholders to design and iterate the Loan Summary page, translating business requirements into UI implementation. Collaborated with API developers to define interface contracts for complex features like Cube.`,
   },
   {
     company: 'TrueCar',
-    period: '2022–23',
+    period: '2022–2023',
     role: 'Senior Software Engineer',
-    blurb:
-      'Built and maintained the Dealer Portal — a React web app and React Native mobile app — shipped to both the iOS and Android app stores. Created reusable UI components and shared logic to speed delivery, mentored a junior engineer, led code reviews, and ran frontend interviews for hiring.',
+    short:
+      'Dealer Portal web (React) + mobile (React Native), shipped to both app stores. Mentored, led reviews.',
+    blurb: `Developed and maintained the Dealer Portal mobile app (React Native) and web application (React), delivering new features in collaboration with design and product teams.
+Mentored a junior engineer on best practices and coding standards; led code reviews to maintain quality and consistency.
+Built reusable UI components and shared logic to accelerate development across the project.
+Published iOS and Android apps to their respective app stores; contributed to hiring by leading frontend interviews.`,
   },
   {
     company: 'Centralex',
-    period: '2021–22',
+    period: '2021-2022',
     role: 'Head of Frontend',
-    blurb:
-      'Led frontend for a decentralized-finance exchange and its mobile app (React, TypeScript, Redux-Sagas, Ionic) in a Yarn monorepo. Built a Web3.js/Solidity staking application and the Next.js marketing site, designed the architecture for scale, and hired and grew the frontend team.',
+    short:
+      'Frontend lead for a DeFi exchange + mobile app (React, Web3.js, Ionic). Built staking app, grew the team.',
+    blurb: `Led frontend development of a decentralized finance Exchange platform and mobile app using React, TypeScript, Redux, Redux Sagas, and Ionic in a Yarn monorepo.
+Built a Staking application with Web3.js and Solidity; developed the Next.js marketing site.
+Designed the application architecture for scalability; managed and grew the frontend team through hiring and mentorship.
+Led frontend architecture decisions in direct collaboration with designers, product managers, and non-technical stakeholders, owning the full UI vision from requirements through delivery.
+`,
   },
   {
     company: 'Ankr',
-    period: '2019–21',
+    period: '2019–2021',
     role: 'Founding Senior Frontend Engineer',
+    short:
+      'Built the Ankr Portal from scratch — RN app, Electron wallet, explorer. Yarn monorepo + custom OAuth layer.',
     blurb:
-      'Core engineer who built the Ankr Portal from scratch — a platform for deploying web and crypto-app servers — plus the React Native mobile app, Electron wallet, and blockchain explorer. Proposed and implemented a Yarn monorepo for cross-app sharing and a custom Axios/Redux-Sagas networking layer for seamless OAuth.',
+      'Core engineer who built the Ankr Portal from scratch — a platform for deploying web and crypto-app servers — in React/TypeScript, plus the React Native mobile app, Electron wallet, and blockchain explorer. Proposed and implemented a Yarn monorepo for cross-app sharing and a custom Axios/Redux-Sagas networking layer for seamless OAuth, and drove UI direction with designers and business leadership.',
+  },
+  {
+    company: 'LIX',
+    period: '2018',
+    role: 'React Native Engineer',
+    short:
+      'Multi-platform React Native book reader — Service Workers, concurrent downloads, 600+ lint fixes.',
+    blurb: `Developed a multi-platform book reader app (iOS, macOS, Windows) for an EdTech startup.
+Implemented Service Workers for a major performance boost; rewrote the book download subsystem with Redux Sagas to support concurrent downloads.
+Set up E2E testing with Spectron; enforced ESLint standards and resolved 600+ code-style issues.
+`,
   },
   {
     company: 'Earlier',
     period: '1999–2018',
     role: 'Full-stack & iOS Engineer',
+    short:
+      'Two decades full-stack & iOS across agencies and product cos — PHP, JavaScript, Flash, MySQL, EmberJS, Objective-C, HTML',
     blurb:
-      'Two decades across agencies and product companies. LIX (React Native book reader; Service Workers, concurrent downloads, 600+ lint issues resolved), EPAM (Objective-C for Sberbank iOS, React Native), and full-stack PHP/JS shops. From Objective-C and PHP to modern React/TypeScript.',
+      'I spent a decade in full-stack and mobile development — building iOS apps, React Native projects, and web applications across agencies, product companies, and client services in both Russia and the US. That period included sole ownership of mobile clients, junior developer mentorship, and work across a wide range of stacks.',
   },
 ];
 
@@ -95,20 +141,26 @@ export interface ChipDef {
 
 // Tech tags attached to each experience card.
 export const CHIPS: ChipDef[] = [
-  { label: 'Vue', card: 0 },
-  { label: 'Playwright', card: 0 },
-  { label: 'TypeScript', card: 0 },
-  { label: 'Storybook', card: 0 },
-  { label: 'React', card: 1 },
-  { label: 'React Native', card: 1 },
+  { label: 'Next.js', card: 0 },
+  { label: 'NestJS', card: 0 },
+  { label: 'Stripe', card: 0 },
+  { label: 'React Native', card: 0 },
+  { label: 'Vue', card: 1 },
+  { label: 'Playwright', card: 1 },
+  { label: 'TypeScript', card: 1 },
+  { label: 'Storybook', card: 1 },
   { label: 'React', card: 2 },
-  { label: 'Node', card: 2 },
+  { label: 'React Native', card: 2 },
   { label: 'React', card: 3 },
-  { label: 'React Native', card: 3 },
-  { label: 'Electron', card: 3 },
-  { label: 'Monorepo', card: 3 },
-  { label: 'JavaScript', card: 4 },
-  { label: 'Node', card: 4 },
+  { label: 'TypeScript', card: 3 },
+  { label: 'React', card: 4 },
+  { label: 'React Native', card: 4 },
+  { label: 'Electron', card: 4 },
+  { label: 'Monorepo', card: 4 },
+  { label: 'React Native', card: 5 },
+  { label: 'JavaScript', card: 5 },
+  { label: 'JavaScript', card: 6 },
+  { label: 'Node', card: 6 },
 ];
 
 // Maps a tech label to a Simple Icons logo saved under /public/logos.
@@ -249,7 +301,9 @@ export function buildScene(vh: number): Scene {
 
   // --- stack ball (leftmost) : 8-link chain --------------------------------
   const tbX = xs[0];
-  const tbDepth = Math.min(280, vh * 0.4);
+  // 2x the card rope length (ball diameter stands in for card height)
+  const tbBase = Math.max(110, Math.min(360, vh - 120 - 2 * TECH_R - anchorY));
+  const tbDepth = Math.max(60, tbBase + (rand(99) - 0.5) * 200); // ±100px jitter
   let tbPrev = addPoint(tbX, anchorY, 3, true);
   for (let s = 1; s <= 8; s++) {
     const t = s / 8;
@@ -277,10 +331,11 @@ export function buildScene(vh: number): Scene {
   // --- experience cards : rigid triangle (Pv + BL + BR) on a 6-link chain ---
   EXPERIENCE.forEach((exp, i) => {
     const cx = xs[i + 1];
-    const cardH = estimateCardHeight(exp.blurb);
+    const cardH = estimateCardHeight(exp.short);
     cardHeights.push(cardH);
     // Longer cards hang higher so their bottom stays clear of the nav row.
-    const depth = Math.max(110, Math.min(360, vh - 120 - cardH - anchorY));
+    const base = Math.max(110, Math.min(360, vh - 120 - cardH - anchorY)) / 2;
+    const depth = Math.max(60, base + (rand(i * 8.3 + 11) - 0.5) * 200); // ±100px jitter
     // Corner mass — bigger card → heavier → more inertia; slight random jitter.
     const cim = 1 / ((cardH / 230) * (0.9 + rand(i * 3.7 + 2) * 0.3));
     cornerWs.push(1 / cim);

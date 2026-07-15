@@ -2,24 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Gold-on-black scrollbar for the hanging-chain stage */
-.chain-scroll {
+/* Gold-on-black scrollbar — the hanging-chain stage look, applied app-wide. */
+* {
   scrollbar-width: thin;
   scrollbar-color: #e0a458 #100e0b;
 }
-.chain-scroll::-webkit-scrollbar {
+*::-webkit-scrollbar {
+  width: 10px;
   height: 10px;
   background: #100e0b;
 }
-.chain-scroll::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track {
   background: #100e0b;
 }
-.chain-scroll::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb {
   background: #e0a458;
   border-radius: 6px;
   border: 2px solid #100e0b;
 }
-.chain-scroll::-webkit-scrollbar-thumb:hover {
+*::-webkit-scrollbar-thumb:hover {
   background: #f0b968;
 }
 

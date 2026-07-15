@@ -70,6 +70,7 @@ export default function StaticShowcase() {
                   color: 'rgba(236,231,221,.7)',
                   margin: '10px 0 0',
                   lineHeight: 1.55,
+                  whiteSpace: 'pre-line', // keep intro + bullet lines from ilia.to
                 }}
               >
                 {exp.blurb}
