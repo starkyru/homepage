@@ -19,7 +19,7 @@ const DISC_GAP = 6; // min clear space between discs so they never look stuck to
 const FRICTION = 0.96; // bleeds off speed so the pile settles
 const GRAVITY = 0.25; // discs settle toward the bottom of the ball
 const INERTIA = 0.5; // how much the discs lag when the big ball moves
-const SPRINT = 9;
+const SPRINT = 22; // click impulse — sends the disc darting across the ball
 const SETTLE_FRAMES = 300; // hard cap (~5s) — always come to rest in time
 
 interface Tech {
@@ -63,6 +63,7 @@ export default function StackBall({
   } | null>(null);
   const rafRef = useRef<number | null>(null);
   const sleepRef = useRef(false); // frozen once the discs have settled
+  const wakeRef = useRef(false); // a click reopens the settle window
 
   useEffect(() => {
     const n = techs.length;
@@ -120,6 +121,14 @@ export default function StackBall({
         }
       }
       awake++;
+
+      // a click restarts the settle window so a late tap actually keeps moving
+      // instead of being frozen by the SETTLE_FRAMES cap on the next frame.
+      if (wakeRef.current) {
+        wakeRef.current = false;
+        awake = 0;
+        still = 0;
+      }
 
       for (let i = 0; i < n; i++) {
         s.vx[i] -= cax * INERTIA;
@@ -209,6 +218,7 @@ export default function StackBall({
     const s = stateRef.current;
     if (!s) return;
     sleepRef.current = false; // wake on interaction
+    wakeRef.current = true; // reopen the settle window (see step())
     const a = Math.random() * Math.PI * 2;
     s.vx[i] = Math.cos(a) * SPRINT;
     s.vy[i] = Math.sin(a) * SPRINT;
