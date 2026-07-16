@@ -15,6 +15,7 @@ export default function HangingChainHome() {
   // `active` gates the physics; false → accessible static fallback.
   const [active, setActive] = useState(false);
   const [height, setHeight] = useState(780);
+  const [width, setWidth] = useState(1280);
   const resetRef = useRef<() => void>(() => undefined);
 
   useEffect(() => {
@@ -22,8 +23,9 @@ export default function HangingChainHome() {
     let raf = 0;
     const compute = () => {
       setActive(!mq.matches && window.innerWidth >= MIN_PHYSICS_WIDTH);
-      // Round to limit scene rebuilds while the URL bar / window nudges height.
+      // Round to limit scene rebuilds while the URL bar / window nudges size.
       setHeight(Math.round(window.innerHeight / 40) * 40);
+      setWidth(Math.round(window.innerWidth / 40) * 40);
     };
     const onResize = () => {
       cancelAnimationFrame(raf);
@@ -39,7 +41,7 @@ export default function HangingChainHome() {
     };
   }, []);
 
-  const scene = useMemo(() => buildScene(height), [height]);
+  const scene = useMemo(() => buildScene(height, width), [height, width]);
 
   return (
     <main

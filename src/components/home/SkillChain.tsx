@@ -34,7 +34,7 @@ export default function SkillChain({ scene, registerReset }: Props) {
   // the wheel and the nav buttons feel smooth and momentum-y.
   const targetRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
-  const [scrollSettled, setScrollSettled] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   const ease = useCallback(() => {
     const el = scrollRef.current;
@@ -47,7 +47,6 @@ export default function SkillChain({ scene, registerReset }: Props) {
       el.scrollLeft = targetRef.current;
       targetRef.current = null;
       rafRef.current = null;
-      setScrollSettled(true);
       return;
     }
     el.scrollLeft += diff * 0.16;
@@ -75,7 +74,8 @@ export default function SkillChain({ scene, registerReset }: Props) {
         Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
       if (delta === 0) return;
       reExpandRef.current = false; // manual scroll cancels a pending re-open
-      setScrollSettled(false);
+      if (reExpandTimer.current != null)
+        window.clearTimeout(reExpandTimer.current);
       scrollToLeft(delta, true);
       e.preventDefault();
     };
@@ -99,15 +99,14 @@ export default function SkillChain({ scene, registerReset }: Props) {
     (dir: number) => {
       const el = scrollRef.current;
       if (!el) return;
-      // Close first; the effect below restores an open panel only after the
-      // scroll and the title swap for the newly centred experience finish.
-      reExpandRef.current = expandedRef.current;
+      // Close first; the easing completion restores an open panel after the
+      // scroll and title swap for the newly centred experience finish.
+      reExpandRef.current = expanded;
       if (reExpandTimer.current != null) {
         window.clearTimeout(reExpandTimer.current);
         reExpandTimer.current = null;
       }
-      if (expandedRef.current) setExpanded(false);
-      setScrollSettled(false);
+      if (expanded) setExpanded(false);
       const items = scene.itemsX;
       const clearCenter = PANEL_W + (window.innerWidth - PANEL_W) / 2;
       const cur = el.scrollLeft + clearCenter; // content x currently centred
@@ -126,8 +125,29 @@ export default function SkillChain({ scene, registerReset }: Props) {
       }
       indexRef.current = i;
       scrollToLeft(items[i] - clearCenter);
+
+      if (expanded) {
+        const distance = Math.abs(
+          (targetRef.current ?? el.scrollLeft) - el.scrollLeft,
+        );
+        // The easing loop reduces the remaining distance by 16% per frame.
+        // Schedule the re-open from this arrow action, after that precise
+        // travel time plus the title's exit/enter transition.
+        const frames = Math.max(
+          1,
+          Math.ceil(Math.log(0.5 / Math.max(distance, 0.5)) / Math.log(0.84)),
+        );
+        reExpandTimer.current = window.setTimeout(
+          () => {
+            if (reExpandRef.current) setExpanded(true);
+            reExpandRef.current = false;
+            reExpandTimer.current = null;
+          },
+          frames * 17 + 300,
+        );
+      }
     },
-    [scene, scrollToLeft],
+    [expanded, scene, scrollToLeft],
   );
 
   // --- centred-job accordion (between the arrows) --------------------------
@@ -138,44 +158,12 @@ export default function SkillChain({ scene, registerReset }: Props) {
   const [centered, setCentered] = useState(0);
   const [shownJob, setShownJob] = useState(0);
   const [panelUp, setPanelUp] = useState(true);
-  const [expanded, setExpanded] = useState(false);
   const swapTimer = useRef<number | null>(null);
+  const animateTitleSwapRef = useRef(false);
   // Arrow pressed while expanded → collapse for the scroll, re-open once it
-  // settles. `expandedRef` mirrors `expanded` so `go`/`ease` read it without
-  // taking it as a dependency.
+  // settles.
   const reExpandRef = useRef(false);
   const reExpandTimer = useRef<number | null>(null);
-  const expandedRef = useRef(false);
-  useEffect(() => {
-    expandedRef.current = expanded;
-  }, [expanded]);
-
-  // Re-open only after the scroll has settled and the new title is visible.
-  // Waiting for both avoids reopening the outgoing experience while its title
-  // is still animating away.
-  useEffect(() => {
-    if (
-      !scrollSettled ||
-      !reExpandRef.current ||
-      centered !== shownJob ||
-      !panelUp
-    ) {
-      return;
-    }
-
-    reExpandTimer.current = window.setTimeout(() => {
-      reExpandRef.current = false;
-      setExpanded(true);
-      reExpandTimer.current = null;
-    }, 260);
-
-    return () => {
-      if (reExpandTimer.current != null) {
-        window.clearTimeout(reExpandTimer.current);
-        reExpandTimer.current = null;
-      }
-    };
-  }, [centered, panelUp, scrollSettled, shownJob]);
 
   const nearestJob = useCallback(() => {
     const el = scrollRef.current;
@@ -195,27 +183,36 @@ export default function SkillChain({ scene, registerReset }: Props) {
     return best - 1; // → EXPERIENCE index
   }, [scene]);
 
-  // Track the centred card on scroll; any horizontal scroll collapses the panel.
+  // Track the centred card on scroll. Arrow navigation intentionally collapses
+  // the panel immediately; wheel navigation lets the title-swap effect below
+  // control its transition once the next card becomes centred.
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     const onScroll = () => {
       setCentered(nearestJob());
       setExpanded(false);
-      setScrollSettled(false);
     };
     el.addEventListener('scroll', onScroll, { passive: true });
     return () => el.removeEventListener('scroll', onScroll);
   }, [nearestJob]);
 
-  // Animate the title swap: drop the old title down, then pop the new one up.
+  // Update the title first, then animate that new title down and back up. This
+  // keeps wheel navigation from visibly moving the outgoing role as if it were
+  // the selected one.
   useEffect(() => {
     if (centered === shownJob) return;
     setExpanded(false);
+    animateTitleSwapRef.current = true;
+    setShownJob(centered);
+  }, [centered, shownJob]);
+
+  useEffect(() => {
+    if (!animateTitleSwapRef.current) return;
+    animateTitleSwapRef.current = false;
     setPanelUp(false);
     if (swapTimer.current != null) window.clearTimeout(swapTimer.current);
     swapTimer.current = window.setTimeout(() => {
-      setShownJob(centered);
       setPanelUp(true);
       swapTimer.current = null;
     }, 200);
@@ -225,7 +222,7 @@ export default function SkillChain({ scene, registerReset }: Props) {
         swapTimer.current = null;
       }
     };
-  }, [centered, shownJob]);
+  }, [shownJob]);
 
   const job = EXPERIENCE[shownJob];
 
@@ -464,6 +461,10 @@ export default function SkillChain({ scene, registerReset }: Props) {
             type='button'
             onClick={() => {
               reExpandRef.current = false; // manual toggle overrides auto re-open
+              if (reExpandTimer.current != null) {
+                window.clearTimeout(reExpandTimer.current);
+                reExpandTimer.current = null;
+              }
               setExpanded((v) => !v);
             }}
             aria-expanded={expanded}

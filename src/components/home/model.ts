@@ -109,8 +109,11 @@ Led frontend architecture decisions in direct collaboration with designers, prod
     role: 'Founding Senior Frontend Engineer',
     short:
       'Built the Ankr Portal from scratch — RN app, Electron wallet, explorer. Yarn monorepo + custom OAuth layer.',
-    blurb:
-      'Core engineer who built the Ankr Portal from scratch — a platform for deploying web and crypto-app servers — in React/TypeScript, plus the React Native mobile app, Electron wallet, and blockchain explorer. Proposed and implemented a Yarn monorepo for cross-app sharing and a custom Axios/Redux-Sagas networking layer for seamless OAuth, and drove UI direction with designers and business leadership.',
+    blurb: `Core team member who built the Ankr Portal from scratch - a platform for deploying web and crypto-app servers - using React and TypeScript.
+Developed the Ankr Mobile app (React Native), Ankr Wallet (Electron), and blockchain explorer in a Yarn monorepo.
+Proposed and implemented a Yarn monorepo architecture for cross-app code sharing; built a custom Axios/Redux-Sagas networking layer for seamless OAuth handling.
+Drove UI architecture and product direction in close collaboration with designers and business leadership, translating stakeholder requirements into scalable frontend solutions.
+`,
   },
   {
     company: 'LIX',
@@ -242,7 +245,7 @@ export interface Scene {
 
 const FIRST_X = 760;
 const GAPS = [430, 520, 400, 560, 470]; // non-uniform spacing between items
-const RIGHT_MARGIN = 380;
+const RIGHT_MARGIN = 380; // floor; widened per-viewport so the last card can centre
 const TECH_R = 116;
 
 // Deterministic pseudo-random (stable across SSR/CSR) for weights + scatter.
@@ -258,7 +261,7 @@ function estimateCardHeight(blurb: string): number {
   return 78 /* header + role + padding */ + lines * 19;
 }
 
-export function buildScene(vh: number): Scene {
+export function buildScene(vh: number, vw: number): Scene {
   const points: Point[] = [];
   const sticks: Stick[] = [];
 
@@ -297,7 +300,11 @@ export function buildScene(vh: number): Scene {
   const xs = [FIRST_X];
   for (let i = 0; i < EXPERIENCE.length; i++)
     xs.push(xs[i] + GAPS[i % GAPS.length]);
-  const worldW = xs[xs.length - 1] + RIGHT_MARGIN;
+  // The nav centres a card at PANEL_W + (vw - PANEL_W) / 2; to reach that for the
+  // last card the world must extend at least (vw - PANEL_W) / 2 past it, else it
+  // can never scroll to centre and its accordion never shows. Add slack.
+  const rightMargin = Math.max(RIGHT_MARGIN, (vw - PANEL_W) / 2 + 40);
+  const worldW = xs[xs.length - 1] + rightMargin;
 
   // --- stack ball (leftmost) : 8-link chain --------------------------------
   const tbX = xs[0];
