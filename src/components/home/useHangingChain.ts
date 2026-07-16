@@ -1,6 +1,6 @@
 import { RefObject, useCallback, useEffect, useRef } from 'react';
 
-import type { Scene } from './model';
+import { PANEL_W, type Scene } from './model';
 import { step } from './physics';
 
 // Round transforms to 0.1px so a settled node produces an identical string
@@ -245,6 +245,7 @@ export function useHangingChain(
     };
 
     const loop = () => {
+      edgeScroll();
       applyScrollInertia();
       step(world, 20); // extra iterations keep the rigid triangles stiff
       render();
@@ -260,8 +261,34 @@ export function useHangingChain(
 
     let dragPoint = -1;
     let dragOff = { x: 0, y: 0 };
+    let dragClient = { x: 0, y: 0 }; // last pointer position (viewport coords)
     let pressSnap = '';
     let pressAt = { x: 0, y: 0 };
+
+    // Drag a card into the left/right margin → auto-scroll the chain, keeping the
+    // card pinned under the cursor so you can pull the view along it.
+    const EDGE = 140; // px from the edge where auto-scroll starts
+    const EDGE_MAX = 26; // px/frame at the very edge
+    const edgeScroll = () => {
+      if (dragPoint < 0 || !scroller) return;
+      const distL = dragClient.x - PANEL_W; // chain sits right of the identity panel
+      const distR = window.innerWidth - dragClient.x;
+      let dx = 0;
+      if (distL < EDGE) dx = -EDGE_MAX * (1 - Math.max(0, distL) / EDGE);
+      else if (distR < EDGE) dx = EDGE_MAX * (1 - Math.max(0, distR) / EDGE);
+      if (dx === 0) return;
+      const max = scroller.scrollWidth - scroller.clientWidth;
+      const next = Math.max(0, Math.min(max, scroller.scrollLeft + dx));
+      if (next === scroller.scrollLeft) return; // already at the end
+      scroller.scrollLeft = next;
+      // re-pin the dragged card to the cursor now that the content shifted
+      const rect = stage.getBoundingClientRect();
+      const p = world.points[dragPoint];
+      p.px = p.x; // carry the motion as velocity → natural release
+      p.py = p.y;
+      p.x = dragClient.x - rect.left - dragOff.x;
+      p.y = dragClient.y - rect.top - dragOff.y;
+    };
 
     const snap = (id: string) => {
       if (!id || snapped.has(id)) return;
@@ -279,6 +306,7 @@ export function useHangingChain(
         const l = local(e);
         const p = world.points[dragPoint];
         dragOff = { x: l.x - p.x, y: l.y - p.y };
+        dragClient = { x: e.clientX, y: e.clientY };
         p.held = true;
         e.preventDefault();
         return;
@@ -292,6 +320,7 @@ export function useHangingChain(
 
     const onMove = (e: PointerEvent) => {
       if (dragPoint < 0) return;
+      dragClient = { x: e.clientX, y: e.clientY };
       const l = local(e);
       const p = world.points[dragPoint];
       p.px = p.x;

@@ -53,7 +53,7 @@ export interface Experience {
 // Ordered most-recent → oldest (drives left → right placement on the chain).
 export const EXPERIENCE: Experience[] = [
   {
-    company: 'Overtone Arr',
+    company: 'Overtone Art',
     period: '2026–now',
     role: 'Founder / Builder',
     short:
@@ -146,6 +146,8 @@ export interface ChipDef {
 export const CHIPS: ChipDef[] = [
   { label: 'Next.js', card: 0 },
   { label: 'NestJS', card: 0 },
+  { label: 'TypeScript', card: 0 },
+  { label: 'PostgreSQL', card: 0 },
   { label: 'Stripe', card: 0 },
   { label: 'React Native', card: 0 },
   { label: 'Vue', card: 1 },
