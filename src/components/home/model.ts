@@ -19,6 +19,11 @@ export const palette = {
 export const PANEL_W = 440;
 export const CARD_W = 260;
 
+// Mobile chrome heights: the fixed top header (ilia.to + CTAs) and the bottom
+// accordion nav bar. Used to pad the scroller and to centre boxes on nav.
+export const MOBILE_HEADER_H = 112;
+export const MOBILE_NAV_H = 72;
+
 // ---------------------------------------------------------------------------
 // Content
 // ---------------------------------------------------------------------------
@@ -483,4 +488,265 @@ export function buildScene(vh: number, vw: number): Scene {
   const rest = points.map((p) => ({ ...p }));
 
   return { world, techBall, cards, chips, ropeSticks, itemsX, rest };
+}
+
+// ---------------------------------------------------------------------------
+// Mobile scene: one vertical strand. The logo circle is fixed at the top
+// (pinned — it does not swing on a rope); a rope drops from its bottom to the
+// first box, and every box's bottom-centre anchors the rope down to the next
+// box. So each rope is linked to the box above it — a single hanging chain.
+// ---------------------------------------------------------------------------
+export interface MobileBoxView {
+  id: string;
+  exp: Experience;
+  index: number; // EXPERIENCE index (tap-to-open target)
+  point: number; // Pv — rope-in attach on the top edge (centre)
+  bl: number; // bottom-left corner
+  br: number; // bottom-right corner
+  bc: number; // bottom-centre — rope-out anchor to the next box
+  height: number; // fixed render height so the DOM box matches the physics quad
+  attach: number; // rope attach fraction across the top — always 0.5 on mobile
+}
+
+export interface MobileScene {
+  world: World;
+  techBall: TechBallView;
+  boxes: MobileBoxView[];
+  chips: ChipView[]; // tech logos bolted to the box borders (snappable)
+  ropeSticks: number[];
+  cardW: number; // shared box width (= BR.x − BL.x at rest)
+  itemsY: number[]; // centre y of each box, for the bottom-accordion nav
+  rest: Point[];
+}
+
+const MB_TOP = 28; // gap above the circle
+const MB_SEG = 5; // rope segments between bodies
+const MB_SEG_LEN = 26; // px per rope segment
+const MB_CHIP_STRUT_MIN = 22;
+const MB_CHIP_STRUT_MAX = 34;
+const MB_CHIP_TOP = 44; // keep chips below the top edge (clear of the rope)
+const MB_CHIP_CORNER = 30; // keep chips off the rounded corners
+const MB_CHIP_R = 20;
+const MB_CHIP_SLOT = 46; // vertical space reserved per chip on an edge
+
+// Minimum box height from the short blurb; grown further if the chips on one
+// side need more vertical room. Fixed height so the physics bottom-centre lines
+// up with the rendered box (an outgoing rope hangs from it).
+function mobileCardHeight(short: string, cardW: number): number {
+  const charsPerLine = Math.max(20, Math.floor((cardW - 40) / 6.6));
+  const lines = Math.ceil(short.length / charsPerLine);
+  return 96 + lines * 19; // company + role + period + padding, then body lines
+}
+
+// Chips ride short rigid struts off the box's LEFT and RIGHT edges only (the
+// bottom edge is left clear for the outgoing rope). Weights are solved so the
+// net torque about the rope anchor is zero → the box hangs level at rest, and
+// snapping a chip off unbalances it so the box tilts. Mirrors the desktop
+// satellite maths, minus the bottom run.
+function attachMobileChips(
+  points: Point[],
+  addPoint: (
+    x: number,
+    y: number,
+    r: number,
+    pinned?: boolean,
+    im?: number,
+  ) => number,
+  addStick: (a: number, b: number, stiff?: number) => number,
+  box: MobileBoxView,
+  cardW: number,
+  cardH: number,
+  cornerW: number,
+  chipList: number[], // global CHIPS indices for this box
+): ChipView[] {
+  const pv = points[box.point];
+  const f = box.attach;
+  const hwL = f * cardW; // pivot → left edge
+  const hwR = (1 - f) * cardW; // pivot → right edge
+  const seg = cardH - MB_CHIP_CORNER - MB_CHIP_TOP; // usable vertical edge span
+  const k = chipList.length;
+  const leftCount = Math.ceil(k / 2);
+  // 1) place each chip on a side with even slotting + bounded jitter
+  const placed = chipList.map((gi, j) => {
+    const left = j < leftCount;
+    const idxOnSide = left ? j : j - leftCount;
+    const countOnSide = Math.max(1, left ? leftCount : k - leftCount);
+    const frac =
+      (idxOnSide + 0.5) / countOnSide +
+      (rand(gi * 2.3 + 1) - 0.5) * (0.4 / countOnSide);
+    const by = MB_CHIP_TOP + Math.max(0, Math.min(seg, frac * seg));
+    const bx = left ? -hwL : hwR;
+    const nx = left ? -1 : 1;
+    const strut =
+      MB_CHIP_STRUT_MIN +
+      rand(gi * 7.1 + 9) * (MB_CHIP_STRUT_MAX - MB_CHIP_STRUT_MIN);
+    const dx = bx + nx * strut; // horizontal lever arm from the pivot
+    const w = 0.7 + rand(gi * 5.3 + 4) * 0.9;
+    return { gi, bx, by, nx, strut, dx, w };
+  });
+  // 2) null the net torque (chips + the two off-centre corners) so it hangs level
+  const bl = points[box.bl];
+  const br = points[box.br];
+  const tCorner = cornerW * (bl.x - pv.x + (br.x - pv.x));
+  const D = placed.reduce((s, p) => s + p.dx * p.dx, 0);
+  if (D > 0) {
+    const lambda = (placed.reduce((s, p) => s + p.w * p.dx, 0) + tCorner) / D;
+    for (const p of placed) p.w = Math.max(0.4, p.w - lambda * p.dx);
+  }
+  // 3) commit weighted discs + three rigid links each (weld to the box corners)
+  const out: ChipView[] = [];
+  for (const p of placed) {
+    const chip = addPoint(
+      pv.x + p.bx + p.nx * p.strut,
+      pv.y + p.by,
+      MB_CHIP_R,
+      false,
+      1 / p.w,
+    );
+    const s1 = addStick(box.point, chip, 1);
+    const s2 = addStick(box.bl, chip, 1);
+    const s3 = addStick(box.br, chip, 1);
+    out.push({
+      id: `mchip-${p.gi}`,
+      label: CHIPS[p.gi].label,
+      point: chip,
+      sticks: [s1, s2, s3],
+      cardPoint: box.point,
+      cardBL: box.bl,
+      cardBR: box.br,
+      bx: p.bx,
+      by: p.by,
+    });
+  }
+  return out;
+}
+
+export function buildMobileScene(vw: number): MobileScene {
+  const points: Point[] = [];
+  const sticks: Stick[] = [];
+  const addPoint = (
+    x: number,
+    y: number,
+    r: number,
+    pinned = false,
+    im = 1,
+  ): number => {
+    points.push({ x, y, px: x, py: y, r, im, pinned, held: false });
+    return points.length - 1;
+  };
+  const addStick = (a: number, b: number, stiff = 1): number => {
+    const A = points[a];
+    const B = points[b];
+    sticks.push({
+      a,
+      b,
+      len: Math.hypot(B.x - A.x, B.y - A.y),
+      stiff,
+      broken: false,
+    });
+    return sticks.length - 1;
+  };
+
+  const cx = Math.round(vw / 2);
+  // Leave side room for the chips + their struts so they clear the walls.
+  const cardW = Math.max(188, Math.min(272, vw - 132));
+  const ballR = Math.min(104, Math.round((vw - 96) / 2));
+
+  const ropeSticks: number[] = [];
+  const boxes: MobileBoxView[] = [];
+  const chips: ChipView[] = [];
+  const itemsY: number[] = [];
+
+  // fixed circle (pinned centre) — logos inside still bounce, the circle doesn't
+  const circleCY = MB_TOP + ballR;
+  const ballPoint = addPoint(cx, circleCY, ballR, true);
+  const techBall: TechBallView = {
+    id: 'techball',
+    labels: SKILLS.map((s) => s.label),
+    r: ballR,
+    point: ballPoint,
+  };
+
+  // pinned rope origin at the bottom of the fixed circle
+  let prev = addPoint(cx, circleCY + ballR, 3, true);
+
+  const BOX_IM = 1 / 1.7; // boxes are heavy → more inertia, calmer sway
+  const cornerW = 1 / BOX_IM; // gravity weight of each bottom corner
+
+  // group the tech chips by experience (same mapping the desktop uses)
+  const byBox: number[][] = EXPERIENCE.map(() => []);
+  CHIPS.forEach((ch, gi) => byBox[ch.card].push(gi));
+
+  EXPERIENCE.forEach((exp, i) => {
+    const chipList = byBox[i];
+    // tall enough for the text and for the chips stacked down one side
+    const perSide = Math.ceil(chipList.length / 2);
+    const chipNeed = perSide * MB_CHIP_SLOT + MB_CHIP_TOP + MB_CHIP_CORNER;
+    const cardH = Math.max(mobileCardHeight(exp.short, cardW), chipNeed);
+
+    // rope down to this box's top edge
+    for (let s = 1; s <= MB_SEG; s++) {
+      const py = points[prev].y + MB_SEG_LEN;
+      const isEnd = s === MB_SEG;
+      const idx = addPoint(cx, py, 4, false, isEnd ? BOX_IM : 1);
+      ropeSticks.push(addStick(prev, idx, 0.96));
+      prev = idx;
+    }
+    const pv = prev; // rope end sits on the top-edge centre
+    const pvY = points[pv].y;
+    const bl = addPoint(cx - cardW / 2, pvY + cardH, 4, false, BOX_IM);
+    const br = addPoint(cx + cardW / 2, pvY + cardH, 4, false, BOX_IM);
+    const bc = addPoint(cx, pvY + cardH, 4, false, BOX_IM);
+    // rigid quad (Pv + BL + BR + BC) → the box keeps its shape and can tilt
+    addStick(pv, bl, 1);
+    addStick(pv, br, 1);
+    addStick(bl, br, 1);
+    addStick(pv, bc, 1);
+    addStick(bl, bc, 1);
+    addStick(br, bc, 1);
+    const box: MobileBoxView = {
+      id: `mbox-${i}`,
+      exp,
+      index: i,
+      point: pv,
+      bl,
+      br,
+      bc,
+      height: cardH,
+      attach: 0.5,
+    };
+    boxes.push(box);
+    for (const c of attachMobileChips(
+      points,
+      addPoint,
+      addStick,
+      box,
+      cardW,
+      cardH,
+      cornerW,
+      chipList,
+    ))
+      chips.push(c);
+    prev = bc; // next rope hangs from this box's bottom-centre
+  });
+
+  const worldH = points[prev].y + 72;
+  const world: World = {
+    points,
+    sticks,
+    w: vw,
+    h: worldH,
+    gravity: 1200,
+    damping: 0.96,
+    floor: 10,
+  };
+
+  // Warm start: a straight vertical strand is already near equilibrium, so this
+  // mainly tightens the ropes and balances the chips before the fade-in.
+  for (let i = 0; i < 320; i++) step(world, 34);
+
+  const rest = points.map((p) => ({ ...p }));
+  for (const b of boxes) itemsY.push(rest[b.point].y + b.height / 2);
+
+  return { world, techBall, boxes, chips, ropeSticks, cardW, itemsY, rest };
 }

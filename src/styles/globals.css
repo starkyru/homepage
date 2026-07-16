@@ -30,11 +30,11 @@ html.dark {
   background: #100e0b;
 }
 
-/* The static resume stays in the DOM for SEO/agents, but on the wide,
-   motion-OK screens where the interactive physics view mounts we hide it at
-   first paint — before JS runs — so it never flashes on load. Must mirror the
-   JS activation gate (MIN_PHYSICS_WIDTH = 900px, prefers-reduced-motion). */
-@media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
+/* The static resume stays in the DOM for SEO/agents, but on motion-OK screens
+   an interactive view mounts (the desktop chain ≥900px, the mobile chain below
+   it), so we hide the fallback at first paint — before JS runs — so it never
+   flashes on load. Must mirror the JS gate (prefers-reduced-motion). */
+@media (prefers-reduced-motion: no-preference) {
   .home-fallback {
     display: none;
   }

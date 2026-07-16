@@ -5,18 +5,23 @@ import { INTRO, palette, SOCIALS } from './model';
 const serif = 'var(--font-newsreader), Georgia, serif';
 
 interface Props {
-  floating: boolean; // overlays the physics stage (desktop) vs. static flow
+  // floating → overlays the desktop physics stage; static → plain SEO flow;
+  // mobile → centred column above the vertical chain.
+  variant: 'floating' | 'static' | 'mobile';
   onReset?: () => void;
-  onBoring?: () => void; // swaps the chain for the plain resume on the right
+  onBoring?: () => void; // swaps the chain for the plain resume
   boring?: boolean; // resume shown → flip the link label back
 }
 
 export default function IdentityPanel({
-  floating,
+  variant,
   onReset,
   onBoring,
   boring,
 }: Props) {
+  const floating = variant === 'floating';
+  const mobile = variant === 'mobile';
+  const showNote = floating || mobile; // chain blurb + "I'm boring" link
   return (
     <div
       style={{
@@ -30,12 +35,22 @@ export default function IdentityPanel({
               background: palette.panelGradient,
               padding: '56px 88px 40px 64px',
             }
-          : {
-              position: 'relative',
-              width: '100%',
-              maxWidth: 560,
-              padding: '48px 24px 8px',
-            }),
+          : mobile
+            ? {
+                position: 'relative',
+                width: '100%',
+                maxWidth: 560,
+                margin: '0 auto',
+                padding: '40px 24px 24px',
+                alignItems: 'center',
+                textAlign: 'center',
+              }
+            : {
+                position: 'relative',
+                width: '100%',
+                maxWidth: 560,
+                padding: '48px 24px 8px',
+              }),
         zIndex: 2,
         boxSizing: 'border-box',
         color: palette.text,
@@ -45,16 +60,19 @@ export default function IdentityPanel({
         overflow: 'hidden',
       }}
     >
-      <div
-        style={{
-          fontFamily: serif,
-          fontStyle: 'italic',
-          fontSize: 20,
-          color: palette.amber,
-        }}
-      >
-        ilia.to
-      </div>
+      {/* ilia.to + the CTA buttons live in the fixed header on mobile */}
+      {!mobile && (
+        <div
+          style={{
+            fontFamily: serif,
+            fontStyle: 'italic',
+            fontSize: 20,
+            color: palette.amber,
+          }}
+        >
+          ilia.to
+        </div>
+      )}
       <h1
         style={{
           margin: 0,
@@ -85,23 +103,25 @@ export default function IdentityPanel({
       >
         {INTRO}
       </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <a href='/projects' style={btnPrimary}>
-          Projects
-        </a>
-        <a
-          href='https://docs.google.com/document/d/1FozMEumbKlGOmrFjOYAsLtrpIC0WKh1Y/export?format=pdf'
-          style={btnOutline}
-        >
-          Download resume (PDF)
-        </a>
-        {floating && onReset && !boring && (
-          <button type='button' onClick={onReset} style={btnGhost}>
-            ↺ Reset chain
-          </button>
-        )}
-      </div>
-      {floating && (
+      {!mobile && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <a href='/projects' style={btnPrimary}>
+            Projects
+          </a>
+          <a
+            href='https://docs.google.com/document/d/1FozMEumbKlGOmrFjOYAsLtrpIC0WKh1Y/export?format=pdf'
+            style={btnOutline}
+          >
+            Download resume (PDF)
+          </a>
+          {floating && onReset && !boring && (
+            <button type='button' onClick={onReset} style={btnGhost}>
+              ↺ Reset chain
+            </button>
+          )}
+        </div>
+      )}
+      {showNote && (
         <div
           style={{
             borderTop: `1px solid ${palette.hairline}`,
@@ -109,6 +129,7 @@ export default function IdentityPanel({
             fontSize: 12.5,
             lineHeight: 1.6,
             color: 'rgba(224,164,88,.85)',
+            ...(mobile ? { width: '100%' } : {}),
           }}
         >
           This chain is live. Scroll or use the arrows to move along it, drag
@@ -129,6 +150,7 @@ export default function IdentityPanel({
           display: 'flex',
           gap: 16,
           fontSize: 13,
+          justifyContent: mobile ? 'center' : undefined,
         }}
       >
         {SOCIALS.map((s) => (
@@ -155,14 +177,14 @@ const btnBase: CSSProperties = {
   textAlign: 'center',
 };
 
-const btnPrimary: CSSProperties = {
+export const btnPrimary: CSSProperties = {
   ...btnBase,
   background: palette.amber,
   color: '#1a1408',
   fontWeight: 600,
 };
 
-const btnOutline: CSSProperties = {
+export const btnOutline: CSSProperties = {
   ...btnBase,
   border: '1px solid rgba(236,231,221,.25)',
   color: palette.text,
