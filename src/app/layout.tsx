@@ -10,43 +10,74 @@ import Navigation from '@/components/Navigation';
 
 import { siteConfig } from '@/constant/config';
 
+const fullTitle = `${siteConfig.title} — ${siteConfig.tagline}`;
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.url),
   title: {
-    default: siteConfig.title,
+    default: fullTitle,
     template: `%s | ${siteConfig.title}`,
   },
   description: siteConfig.description,
+  applicationName: siteConfig.title,
+  authors: [{ name: siteConfig.title, url: siteConfig.url }],
+  creator: siteConfig.title,
+  keywords: [
+    'Ilia Dzhiubanskii',
+    'Frontend Engineer',
+    'Full-Stack Engineer',
+    'React',
+    'React Native',
+    'Vue',
+    'TypeScript',
+    'Node.js',
+    'Next.js',
+    'Software Engineer',
+  ],
   robots: { index: true, follow: true },
-  // !STARTERCONF this is the default favicon, you can generate your own from https://realfavicongenerator.net/
-  // ! copy to /favicon folder
   icons: {
     icon: '/favicon/favicon.ico',
     shortcut: '/favicon/favicon-16x16.png',
     apple: '/favicon/apple-touch-icon.png',
   },
   manifest: `/favicon/site.webmanifest`,
+  // OG/Twitter images are supplied by src/app/opengraph-image.tsx (Next injects
+  // the generated 1200×630 card into both og:image and twitter:image).
   openGraph: {
     url: siteConfig.url,
-    title: siteConfig.title,
+    title: fullTitle,
     description: siteConfig.description,
     siteName: siteConfig.title,
-    images: [],
     type: 'website',
     locale: 'en_US',
   },
-  // twitter: {
-  //   card: 'summary_large_image',
-  //   title: siteConfig.title,
-  //   description: siteConfig.description,
-  //   images: [ ],
-  //   // creator: '@th_clarence',
-  // },
-  // authors: [
-  //   {
-  //     name: 'Theodorus Clarence',
-  //     url: 'https://theodorusclarence.com',
-  //   },
-  // ],
+  twitter: {
+    card: 'summary_large_image',
+    title: fullTitle,
+    description: siteConfig.description,
+  },
+};
+
+// Person structured data → richer search results / knowledge panel.
+const personLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: siteConfig.title,
+  url: siteConfig.url,
+  jobTitle: siteConfig.tagline,
+  description: siteConfig.description,
+  sameAs: [
+    'https://github.com/starkyru',
+    'https://www.linkedin.com/in/starkyru/',
+  ],
+  knowsAbout: [
+    'React',
+    'React Native',
+    'Vue',
+    'TypeScript',
+    'Node.js',
+    'Next.js',
+  ],
 };
 
 // The whole site now uses the single "hanging chain" palette (dark amber on
@@ -58,8 +89,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html className='dark' suppressHydrationWarning>
+    <html lang='en' className='dark' suppressHydrationWarning>
       <body>
+        <script
+          type='application/ld+json'
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(personLd) }}
+        />
         <Navigation />
         {children}
         <Script

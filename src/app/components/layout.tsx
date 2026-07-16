@@ -1,9 +1,11 @@
 import { Metadata } from 'next';
 import * as React from 'react';
 
+// Internal starter/demo page — keep it out of search + the sitemap.
 export const metadata: Metadata = {
   title: 'Components',
-  description: 'Pre-built components with awesome default',
+  description: 'Internal component sandbox',
+  robots: { index: false, follow: false },
 };
 
 export default function ComponentsLayout({

@@ -10,6 +10,7 @@ import { palette } from '@/components/home/model';
 export const metadata: Metadata = {
   title: 'My Projects',
   description: 'Open-source projects and apps by Ilia Dzhiubanskii',
+  alternates: { canonical: '/projects' },
 };
 
 const GITHUB = 'https://github.com/starkyru';

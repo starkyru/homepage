@@ -5,6 +5,8 @@
 module.exports = {
   siteUrl: 'https://ilia.to',
   generateRobotsTxt: true,
+  // internal demo page (also noindex'd) + the generated OG image route
+  exclude: ['/components', '/opengraph-image'],
   robotsTxtOptions: {
     policies: [{ userAgent: '*', allow: '/' }],
   },
