@@ -278,10 +278,61 @@ export function useMobileChain(
       p.y = dragClient.y - rect.top - dragOff.y;
     };
 
+    // Speed limiter: a serial pendulum chain has no bending stiffness, so a
+    // hard fling can whip a box past vertical, flip it upside-down, and tangle
+    // the whole strand. Capping every node's per-frame velocity bleeds off that
+    // energy so the chain can swing but never blows up. Held (dragged) nodes are
+    // capped too, which also tames the release throw.
+    const MAX_STEP = 44; // px/frame — well above a normal drag, kills flings
+    const clampVelocity = () => {
+      for (const p of world.points) {
+        if (p.pinned) continue;
+        const vx = p.x - p.px;
+        const vy = p.y - p.py;
+        const sp = Math.hypot(vx, vy);
+        if (sp > MAX_STEP) {
+          const s = MAX_STEP / sp;
+          p.px = p.x - vx * s;
+          p.py = p.y - vy * s;
+        }
+      }
+    };
+
+    // Hard tilt limit: a box may swing, but its rigid quad is rotated back about
+    // the rope anchor (Pv) if the bottom edge tilts past ±LIMIT — so a box can
+    // never flip upside-down or fold the strand over itself, no matter how hard
+    // it's flung. Previous positions rotate with it, so no velocity is injected.
+    const TILT_LIMIT = (48 * Math.PI) / 180;
+    const clampBoxAngles = () => {
+      for (const b of scene.boxes) {
+        const pv = world.points[b.point];
+        const bl = world.points[b.bl];
+        const br = world.points[b.br];
+        const ang = Math.atan2(br.y - bl.y, br.x - bl.x);
+        if (Math.abs(ang) <= TILT_LIMIT) continue;
+        const d = Math.max(-TILT_LIMIT, Math.min(TILT_LIMIT, ang)) - ang;
+        const cos = Math.cos(d);
+        const sin = Math.sin(d);
+        for (const idx of [b.bl, b.br, b.bc]) {
+          const p = world.points[idx];
+          const dx = p.x - pv.x;
+          const dy = p.y - pv.y;
+          p.x = pv.x + dx * cos - dy * sin;
+          p.y = pv.y + dx * sin + dy * cos;
+          const pdx = p.px - pv.x;
+          const pdy = p.py - pv.y;
+          p.px = pv.x + pdx * cos - pdy * sin;
+          p.py = pv.y + pdx * sin + pdy * cos;
+        }
+      }
+    };
+
     const loop = () => {
       edgeScroll();
       applyScrollInertia();
+      clampVelocity();
       step(world, 26); // extra iterations keep the linked chain from stretching
+      clampBoxAngles();
       render();
       checkSettled();
       rafRef.current = requestAnimationFrame(loop);
