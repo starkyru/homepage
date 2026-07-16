@@ -30,6 +30,16 @@ html.dark {
   background: #100e0b;
 }
 
+/* The static resume stays in the DOM for SEO/agents, but on the wide,
+   motion-OK screens where the interactive physics view mounts we hide it at
+   first paint — before JS runs — so it never flashes on load. Must mirror the
+   JS activation gate (MIN_PHYSICS_WIDTH = 900px, prefers-reduced-motion). */
+@media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
+  .home-fallback {
+    display: none;
+  }
+}
+
 /* Projects page cards — hover lift on the dark palette. */
 .project-card {
   transition:

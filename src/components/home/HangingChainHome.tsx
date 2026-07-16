@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { homeFontVars } from '@/lib/fonts';
 
@@ -11,6 +11,11 @@ import StaticShowcase from './StaticShowcase';
 
 const MIN_PHYSICS_WIDTH = 900;
 
+// Layout effect in the browser (runs before paint → no flash of the static
+// fallback), plain effect on the server (useLayoutEffect would warn during SSR).
+const useIsomorphicLayoutEffect =
+  typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
 export default function HangingChainHome() {
   // `active` gates the physics; false → accessible static fallback.
   const [active, setActive] = useState(false);
@@ -18,7 +23,7 @@ export default function HangingChainHome() {
   const [width, setWidth] = useState(1280);
   const resetRef = useRef<() => void>(() => undefined);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     let raf = 0;
     const compute = () => {
@@ -55,7 +60,7 @@ export default function HangingChainHome() {
         overflow: 'hidden',
       }}
     >
-      {active ? (
+      {active && (
         <>
           <SkillChain
             scene={scene}
@@ -65,12 +70,17 @@ export default function HangingChainHome() {
           />
           <IdentityPanel floating onReset={() => resetRef.current()} />
         </>
-      ) : (
-        <div style={{ height: '100dvh', overflowY: 'auto' }}>
-          <IdentityPanel floating={false} />
-          <StaticShowcase />
-        </div>
       )}
+      {/* Static resume: always in the DOM so SEO & agents can read it. A CSS
+          media query (not JS) hides it on the wide, motion-OK screens where the
+          physics view takes over, so it never paints/blinks before JS mounts. */}
+      <div
+        className='home-fallback'
+        style={{ height: '100dvh', overflowY: 'auto' }}
+      >
+        <IdentityPanel floating={false} />
+        <StaticShowcase />
+      </div>
     </main>
   );
 }

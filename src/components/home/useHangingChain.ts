@@ -34,9 +34,13 @@ export function useHangingChain(
   stageRef: RefObject<HTMLDivElement | null>,
   scene: Scene,
   active: boolean,
+  onSettled?: () => void, // fired once the chain stops swinging (reveal cue)
 ) {
   const rafRef = useRef<number | null>(null);
   const snappedRef = useRef<Set<string>>(new Set());
+  // kept in a ref so a changing callback identity doesn't restart the sim
+  const onSettledRef = useRef(onSettled);
+  onSettledRef.current = onSettled;
 
   const reset = useCallback(() => {
     const { world, rest } = scene;
@@ -214,10 +218,37 @@ export function useHangingChain(
       }
     };
 
+    // Reveal cue: the initial drop swings the cards to equilibrium; watch the
+    // fastest node and fire once it's crawled for a few frames (or after a hard
+    // cap, so we always reveal). Verlet velocity = current − previous position.
+    let settleFrames = 0;
+    let frameCount = 0;
+    let settledFired = false;
+    const checkSettled = () => {
+      if (settledFired) return;
+      frameCount++;
+      let maxV = 0;
+      for (const p of world.points) {
+        if (p.pinned) continue;
+        const dx = p.x - p.px;
+        const dy = p.y - p.py;
+        const v = dx * dx + dy * dy;
+        if (v > maxV) maxV = v;
+      }
+      if (maxV < 0.12)
+        settleFrames++; // < ~0.35px/step
+      else settleFrames = 0;
+      if (settleFrames >= 5 || frameCount >= 200) {
+        settledFired = true;
+        onSettledRef.current?.();
+      }
+    };
+
     const loop = () => {
       applyScrollInertia();
       step(world, 20); // extra iterations keep the rigid triangles stiff
       render();
+      checkSettled();
       rafRef.current = requestAnimationFrame(loop);
     };
 

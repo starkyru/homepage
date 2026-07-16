@@ -23,7 +23,11 @@ export default function SkillChain({ scene, registerReset }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const indexRef = useRef(0);
-  const { reset } = useHangingChain(stageRef, scene, true);
+  // Hidden until the chain settles, then faded in — hides the initial swing.
+  const [ready, setReady] = useState(false);
+  const { reset } = useHangingChain(stageRef, scene, true, () =>
+    setReady(true),
+  );
   const P = (i: number) => scene.world.points[i];
 
   useEffect(() => {
@@ -248,6 +252,8 @@ export default function SkillChain({ scene, registerReset }: Props) {
             height: scene.world.h,
             background: palette.bg,
             userSelect: 'none',
+            opacity: ready ? 1 : 0,
+            transition: 'opacity .45s ease',
           }}
         >
           {/* rope lines + the short rigid rods bolting each chip to its card */}

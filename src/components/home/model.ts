@@ -1,4 +1,4 @@
-import type { Point, Stick, World } from './physics';
+import { type Point, step, type Stick, type World } from './physics';
 
 // ---------------------------------------------------------------------------
 // Palette (option 2a — "Hanging chain")
@@ -472,6 +472,11 @@ export function buildScene(vh: number, vw: number): Scene {
     damping: 0.965,
     floor: 10, // = scrollbar height, so snapped discs rest right on top of it
   };
+
+  // Warm start: settle the hanging bodies to equilibrium up front so the scene
+  // appears already at rest and can fade in fast, instead of visibly swinging
+  // into place on load.
+  for (let i = 0; i < 220; i++) step(world, 12);
 
   const rest = points.map((p) => ({ ...p }));
 
