@@ -34,25 +34,12 @@ const sections: Section[] = [
     title: 'Apps & Products',
     projects: [
       {
-        name: 'AccordsQ',
+        name: 'Overtone.art',
         description:
-          'React Native music composing app built around chord progressions. Place chords on a simplified score, tune each chord note-by-note, layer instrument/drum tracks, arrange reusable sections.',
+          'Photography gallery and storefront I built and operate end-to-end. A Turbo monorepo: NestJS API, Next.js web, React Native mobile app, MCP server, and a Storybook component library. Stripe payments, automated print fulfillment via my own Printify/Prodigi SDKs, an in-browser design editor (canvas-editor), and a two-stage LLM pipeline that drafts artwork descriptions.',
         tools:
-          'React Native, Expo, TypeScript, Zustand, Immer, React Navigation, react-native-audio-api, react-native-reanimated, tonal, Gorhom Bottom Sheet',
-      },
-      {
-        name: 'Willy',
-        description:
-          'AI-powered voice hiring assistant — answers recruiter calls using confirmed resume knowledge. Android + macOS desktop.',
-        tools:
-          'TypeScript monorepo, React Native (Android), Electron (macOS), Claude',
-      },
-      {
-        name: 'vocallQ',
-        description:
-          'Expo voice/audio app with on-device ML (pitch detection).',
-        tools:
-          'React Native, Expo Router, TypeScript, Zustand, Shopify Skia, onnxruntime-react-native, pitchy, expo-audio-studio, Moti',
+          'Turbo monorepo, NestJS, Next.js 15, React 19, React Native, Stripe, Anthropic SDK, Storybook, Fabric.js, PostgreSQL, Redis',
+        url: 'https://overtone.art',
       },
       {
         name: 'bake-app',
@@ -60,6 +47,13 @@ const sections: Section[] = [
         description: 'Unified Cafe-Bakery automation platform.',
         tools:
           'NestJS, TypeORM, PostgreSQL, Redis, Bull, Socket.io, Swagger; React + Vite frontend, TanStack Query, Zustand, Tailwind CSS; Anthropic SDK',
+      },
+      {
+        name: 'Willy',
+        description:
+          'AI-powered voice hiring assistant — answers recruiter calls using confirmed resume knowledge. Android + macOS desktop.',
+        tools:
+          'TypeScript monorepo, React Native (Android), Electron (macOS), Claude',
       },
       {
         name: 'ASO Audit Agent',
@@ -70,13 +64,21 @@ const sections: Section[] = [
           'NestJS, Mastra, Next.js 15, React 19, Tailwind CSS, @stream-schema/core, Zod, TypeScript monorepo (Turbo), NVIDIA NIM / Anthropic Claude',
       },
       {
-        name: 'Overtone.art',
+        name: 'AccordsQ',
         description:
-          'Photography gallery and storefront I built and operate end-to-end. A Turbo monorepo: NestJS API, Next.js web, React Native mobile app, MCP server, and a Storybook component library. Stripe payments, automated print fulfillment via my own Printify/Prodigi SDKs, an in-browser design editor (canvas-editor), and a two-stage LLM pipeline that drafts artwork descriptions.',
+          'React Native music composing app built around chord progressions. Place chords on a simplified score, tune each chord note-by-note, layer instrument/drum tracks, arrange reusable sections.',
         tools:
-          'Turbo monorepo, NestJS, Next.js 15, React 19, React Native, Stripe, Anthropic SDK, Storybook, Fabric.js, PostgreSQL, Redis',
-        url: 'https://overtone.art',
+          'React Native, Expo, TypeScript, Zustand, Immer, React Navigation, react-native-audio-api, react-native-reanimated, tonal, Gorhom Bottom Sheet',
       },
+
+      {
+        name: 'vocallQ',
+        description:
+          'Expo voice/audio app with on-device ML (pitch detection).',
+        tools:
+          'React Native, Expo Router, TypeScript, Zustand, Shopify Skia, onnxruntime-react-native, pitchy, expo-audio-studio, Moti',
+      },
+
       {
         name: 'AngleForge',
         repo: 'angleforge',
