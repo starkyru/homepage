@@ -7,9 +7,16 @@ const serif = 'var(--font-newsreader), Georgia, serif';
 interface Props {
   floating: boolean; // overlays the physics stage (desktop) vs. static flow
   onReset?: () => void;
+  onBoring?: () => void; // swaps the chain for the plain resume on the right
+  boring?: boolean; // resume shown → flip the link label back
 }
 
-export default function IdentityPanel({ floating, onReset }: Props) {
+export default function IdentityPanel({
+  floating,
+  onReset,
+  onBoring,
+  boring,
+}: Props) {
   return (
     <div
       style={{
@@ -88,7 +95,7 @@ export default function IdentityPanel({ floating, onReset }: Props) {
         >
           Download resume (PDF)
         </a>
-        {floating && onReset && (
+        {floating && onReset && !boring && (
           <button type='button' onClick={onReset} style={btnGhost}>
             ↺ Reset chain
           </button>
@@ -106,6 +113,14 @@ export default function IdentityPanel({ floating, onReset }: Props) {
         >
           This chain is live. Scroll or use the arrows to move along it, drag
           any card to swing it, and click a tech logo to snap it off the chain.
+          {onBoring && (
+            <>
+              {' '}
+              <button type='button' onClick={onBoring} style={boringLink}>
+                {boring ? 'Bring the chain back.' : "I'm boring."}
+              </button>
+            </>
+          )}
         </div>
       )}
       <div
@@ -151,6 +166,17 @@ const btnOutline: CSSProperties = {
   ...btnBase,
   border: '1px solid rgba(236,231,221,.25)',
   color: palette.text,
+};
+
+const boringLink: CSSProperties = {
+  background: 'none',
+  border: 'none',
+  padding: 0,
+  font: 'inherit',
+  color: palette.amber,
+  textDecoration: 'underline',
+  textUnderlineOffset: 2,
+  cursor: 'pointer',
 };
 
 const btnGhost: CSSProperties = {

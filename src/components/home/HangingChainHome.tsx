@@ -5,7 +5,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { homeFontVars } from '@/lib/fonts';
 
 import IdentityPanel from './IdentityPanel';
-import { buildScene, palette } from './model';
+import { buildScene, palette, PANEL_W } from './model';
 import SkillChain from './SkillChain';
 import StaticShowcase from './StaticShowcase';
 
@@ -19,6 +19,8 @@ const useIsomorphicLayoutEffect =
 export default function HangingChainHome() {
   // `active` gates the physics; false → accessible static fallback.
   const [active, setActive] = useState(false);
+  // `boring` swaps the live chain for the plain resume on the right side.
+  const [boring, setBoring] = useState(false);
   const [height, setHeight] = useState(780);
   const [width, setWidth] = useState(1280);
   const resetRef = useRef<() => void>(() => undefined);
@@ -62,13 +64,34 @@ export default function HangingChainHome() {
     >
       {active && (
         <>
-          <SkillChain
-            scene={scene}
-            registerReset={(fn) => {
-              resetRef.current = fn;
-            }}
+          {boring ? (
+            <div
+              style={{
+                position: 'absolute',
+                left: PANEL_W,
+                top: 0,
+                right: 0,
+                bottom: 0,
+                overflowY: 'auto',
+                zIndex: 1,
+              }}
+            >
+              <StaticShowcase />
+            </div>
+          ) : (
+            <SkillChain
+              scene={scene}
+              registerReset={(fn) => {
+                resetRef.current = fn;
+              }}
+            />
+          )}
+          <IdentityPanel
+            floating
+            onReset={() => resetRef.current()}
+            onBoring={() => setBoring((v) => !v)}
+            boring={boring}
           />
-          <IdentityPanel floating onReset={() => resetRef.current()} />
         </>
       )}
       {/* Static resume: always in the DOM so SEO & agents can read it. A CSS
