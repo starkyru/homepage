@@ -25,8 +25,14 @@ export default function SkillChain({ scene, registerReset }: Props) {
   const indexRef = useRef(0);
   // Hidden until the chain settles, then faded in — hides the initial swing.
   const [ready, setReady] = useState(false);
-  const { reset } = useHangingChain(stageRef, scene, true, () =>
-    setReady(true),
+  // Forwards a card tap to openCard (defined below, after its dependencies).
+  const openCardRef = useRef<(index: number) => void>(() => {});
+  const { reset } = useHangingChain(
+    stageRef,
+    scene,
+    true,
+    () => setReady(true),
+    (i) => openCardRef.current(i),
   );
   const P = (i: number) => scene.world.points[i];
 
@@ -77,9 +83,6 @@ export default function SkillChain({ scene, registerReset }: Props) {
       const delta =
         Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
       if (delta === 0) return;
-      reExpandRef.current = false; // manual scroll cancels a pending re-open
-      if (reExpandTimer.current != null)
-        window.clearTimeout(reExpandTimer.current);
       scrollToLeft(delta, true);
       e.preventDefault();
     };
@@ -103,9 +106,8 @@ export default function SkillChain({ scene, registerReset }: Props) {
     (dir: number) => {
       const el = scrollRef.current;
       if (!el) return;
-      // Close first; the easing completion restores an open panel after the
-      // scroll and title swap for the newly centred experience finish.
-      reExpandRef.current = expanded;
+      // Close first; the easing completion re-opens it if the keep-open flag is
+      // set, once the scroll and title swap for the newly centred card finish.
       if (reExpandTimer.current != null) {
         window.clearTimeout(reExpandTimer.current);
         reExpandTimer.current = null;
@@ -129,27 +131,8 @@ export default function SkillChain({ scene, registerReset }: Props) {
       }
       indexRef.current = i;
       scrollToLeft(items[i] - clearCenter);
-
-      if (expanded) {
-        const distance = Math.abs(
-          (targetRef.current ?? el.scrollLeft) - el.scrollLeft,
-        );
-        // The easing loop reduces the remaining distance by 16% per frame.
-        // Schedule the re-open from this arrow action, after that precise
-        // travel time plus the title's exit/enter transition.
-        const frames = Math.max(
-          1,
-          Math.ceil(Math.log(0.5 / Math.max(distance, 0.5)) / Math.log(0.84)),
-        );
-        reExpandTimer.current = window.setTimeout(
-          () => {
-            if (reExpandRef.current) setExpanded(true);
-            reExpandRef.current = false;
-            reExpandTimer.current = null;
-          },
-          frames * 17 + 300,
-        );
-      }
+      // The re-open is handled centrally when the ease settles (see `ease`),
+      // so wheel and arrow navigation restore the panel the same way.
     },
     [expanded, scene, scrollToLeft],
   );
@@ -164,9 +147,10 @@ export default function SkillChain({ scene, registerReset }: Props) {
   const [panelUp, setPanelUp] = useState(true);
   const swapTimer = useRef<number | null>(null);
   const animateTitleSwapRef = useRef(false);
-  // Arrow pressed while expanded → collapse for the scroll, re-open once it
-  // settles.
-  const reExpandRef = useRef(false);
+  // Sticky "keep the accordion open" flag. False by default. The user opening
+  // the panel sets it; closing it clears it. While set, every settled scroll
+  // (wheel or arrows) re-opens the panel on the newly centred experience.
+  const keepOpenRef = useRef(false);
   const reExpandTimer = useRef<number | null>(null);
 
   const nearestJob = useCallback(() => {
@@ -196,6 +180,17 @@ export default function SkillChain({ scene, registerReset }: Props) {
     const onScroll = () => {
       setCentered(nearestJob());
       setExpanded(false);
+      // While the keep-open flag is set, re-open the panel once scrolling stops.
+      // Debounced off the scroll events themselves, so it fires no matter what
+      // drove the scroll (wheel, trackpad momentum, arrows, edge-drag).
+      if (keepOpenRef.current) {
+        if (reExpandTimer.current != null)
+          window.clearTimeout(reExpandTimer.current);
+        reExpandTimer.current = window.setTimeout(() => {
+          setExpanded(true);
+          reExpandTimer.current = null;
+        }, 220);
+      }
     };
     el.addEventListener('scroll', onScroll, { passive: true });
     return () => el.removeEventListener('scroll', onScroll);
@@ -227,6 +222,21 @@ export default function SkillChain({ scene, registerReset }: Props) {
       }
     };
   }, [shownJob]);
+
+  // Tap on a hanging card → centre it and open (and keep open) its accordion.
+  const openCard = useCallback(
+    (i: number) => {
+      keepOpenRef.current = true;
+      setCentered(i);
+      setExpanded(true);
+      const items = scene.itemsX;
+      const clearCenter = PANEL_W + (window.innerWidth - PANEL_W) / 2;
+      indexRef.current = i + 1;
+      scrollToLeft(items[i + 1] - clearCenter);
+    },
+    [scene, scrollToLeft],
+  );
+  openCardRef.current = openCard;
 
   const job = EXPERIENCE[shownJob];
 
@@ -466,12 +476,16 @@ export default function SkillChain({ scene, registerReset }: Props) {
           <button
             type='button'
             onClick={() => {
-              reExpandRef.current = false; // manual toggle overrides auto re-open
+              // User drives the sticky flag: open → keep open on nav; close → stop.
+              setExpanded((v) => {
+                const next = !v;
+                keepOpenRef.current = next;
+                return next;
+              });
               if (reExpandTimer.current != null) {
                 window.clearTimeout(reExpandTimer.current);
                 reExpandTimer.current = null;
               }
-              setExpanded((v) => !v);
             }}
             aria-expanded={expanded}
             aria-label={`${job.company} — ${expanded ? 'hide' : 'show'} details`}

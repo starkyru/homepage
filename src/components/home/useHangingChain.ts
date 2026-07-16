@@ -35,12 +35,15 @@ export function useHangingChain(
   scene: Scene,
   active: boolean,
   onSettled?: () => void, // fired once the chain stops swinging (reveal cue)
+  onCardClick?: (index: number) => void, // tap (not drag) on an experience card
 ) {
   const rafRef = useRef<number | null>(null);
   const snappedRef = useRef<Set<string>>(new Set());
-  // kept in a ref so a changing callback identity doesn't restart the sim
+  // kept in refs so a changing callback identity doesn't restart the sim
   const onSettledRef = useRef(onSettled);
   onSettledRef.current = onSettled;
+  const onCardClickRef = useRef(onCardClick);
+  onCardClickRef.current = onCardClick;
 
   const reset = useCallback(() => {
     const { world, rest } = scene;
@@ -262,6 +265,8 @@ export function useHangingChain(
     let dragPoint = -1;
     let dragOff = { x: 0, y: 0 };
     let dragClient = { x: 0, y: 0 }; // last pointer position (viewport coords)
+    let dragStart = { x: 0, y: 0 }; // press position, to tell a tap from a drag
+    let pressCardIdx = -1; // experience index of the pressed card (tap → open)
     let pressSnap = '';
     let pressAt = { x: 0, y: 0 };
 
@@ -303,6 +308,9 @@ export function useHangingChain(
       const cardEl = target.closest<HTMLElement>('[data-card]');
       if (cardEl) {
         dragPoint = Number(cardEl.dataset.point);
+        // data-card is the EXPERIENCE index for cards (NaN for the stack ball).
+        pressCardIdx = Number(cardEl.dataset.card);
+        dragStart = { x: e.clientX, y: e.clientY };
         const l = local(e);
         const p = world.points[dragPoint];
         dragOff = { x: l.x - p.x, y: l.y - p.y };
@@ -333,6 +341,14 @@ export function useHangingChain(
       if (dragPoint >= 0) {
         world.points[dragPoint].held = false;
         dragPoint = -1;
+        // A tap (barely moved) on an experience card opens its accordion.
+        const moved = Math.hypot(
+          e.clientX - dragStart.x,
+          e.clientY - dragStart.y,
+        );
+        if (moved < 6 && Number.isInteger(pressCardIdx))
+          onCardClickRef.current?.(pressCardIdx);
+        pressCardIdx = -1;
         return;
       }
       if (pressSnap) {
