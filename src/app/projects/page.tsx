@@ -82,10 +82,9 @@ const sections: Section[] = [
 
       {
         name: 'AngleForge',
-        repo: 'angleforge',
         url: 'https://angleforge.ilia.to',
         description:
-          'Angle-first ad-creative factory. Paste one offer brief and it extracts the persuasion angles worth testing, crosses them with hooks, and renders every combination through deterministic HTML/CSS templates across Meta + Taboola placements — each variant compliance-linted before you spend a dollar, then exported as a ZIP with angle-encoded filenames. Selected variants push as PAUSED ads to an ad account.',
+          'Angle-first ad-creative factory. Paste one offer brief and it extracts the persuasion angles worth testing, crosses them with hooks, and renders every combination through deterministic HTML/CSS templates in five style tiers — direct-response, native editorial, lo-fi notes-app, iMessage thread, and As-Seen-On-TV — at exact Meta + Taboola placement sizes. Each variant is linted against per-vertical banned-claims rules before you spend a dollar, then exported as a ZIP whose filenames encode offer_angle_hook_style_size so results roll up by angle. Selected variants push as PAUSED ads to an ad account, and it runs end-to-end with no API keys via a deterministic fixture matrix.',
         tools:
           'Next.js, Anthropic Claude, NVIDIA NIM, OpenAI, fal.ai, Playwright, @stream-schema, sharp, Zod',
       },
@@ -163,6 +162,27 @@ const sections: Section[] = [
         description:
           'Physics-driven text animation engine — characters react to mouse/touch via ripple waves and field effects (water caustics).',
         tools: 'TypeScript, Vite',
+      },
+    ],
+  },
+  {
+    title: 'Learning & Courses',
+    projects: [
+      {
+        name: 'learn-ai',
+        repo: 'learn-ai',
+        description:
+          'A hands-on, project-based curriculum that goes from LLM fundamentals to production RAG and agents — in both TypeScript and Python. 24 numbered modules plus deep-dive companions, each runnable code you build, break, and extend across three depth lanes: use the ecosystem, hand-implement one core piece, or build the machinery from scratch (BPE tokenizer, attention head, vector index, ReAct loop).',
+        tools:
+          'TypeScript + Python monorepo (pnpm, uv), Jest, Anthropic / OpenAI / NVIDIA NIM providers, Chroma/Qdrant, LangGraph, MCP',
+      },
+      {
+        name: 'learn-fullstack',
+        repo: 'learn-fullstack',
+        description:
+          'A hands-on, project-based course from TypeScript basics to two production capstones — a Trello-lite Kanban board and a Slack-lite realtime chat. End-to-end TypeScript: React, Next.js, Node/NestJS, REST + GraphQL, Postgres raw and via Prisma, auth, realtime, Docker, testing, CI/CD. 30 numbered modules plus 20 lettered deep-dives across three depth lanes, with tutor/exam/progress slash commands.',
+        tools:
+          'TypeScript monorepo (Turbo, pnpm), React 19, Next.js, NestJS, GraphQL, Prisma, PostgreSQL, Docker, Vitest, Storybook',
       },
     ],
   },
