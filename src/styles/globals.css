@@ -593,11 +593,69 @@ html.dark {
   }
 }
 
+/*
+ * Resting attractor: the label drifts amber → grey → amber, and the arrow
+ * beside it rocks 3px. Both are the joke — the link literally goes grey and
+ * points at itself — and the reason the control gets noticed at all, since it
+ * is the last line of a paragraph.
+ *
+ * The colour is animated rather than transitioned because it has to run with no
+ * input. That works despite the inline `color: palette.amber` on the button:
+ * animation declarations outrank normal author declarations in the cascade,
+ * inline styles included. So the inline value is what shows when the animation
+ * is suppressed — which is exactly the reduced-motion fallback we want, with no
+ * second declaration to keep in sync.
+ *
+ * #8f8a82 measures 5.6:1 on the #100e0b background, so the dimmest frame of the
+ * cycle still clears WCAG 1.4.3 for body text.
+ *
+ * Transform stays off the button: it already owns translateY for the hover pop,
+ * and one animated transform would overwrite the other. The arrow is a separate
+ * element so the two never share a property.
+ */
+@keyframes chain-boring-drift {
+  0%,
+  100% {
+    color: #e0a458;
+  }
+  50% {
+    color: #8f8a82;
+  }
+}
+
+@keyframes chain-boring-rock {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+}
+
+.chain-boring__arrow {
+  display: inline-block;
+  margin-right: 6px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .chain-boring {
+    animation: chain-boring-drift 3.6s ease-in-out infinite;
+  }
+
+  .chain-boring__arrow {
+    animation: chain-boring-rock 1.8s ease-in-out infinite;
+  }
+}
+
 @media (hover: hover) {
   .chain-boring:hover {
     transform: translateY(-2px);
     text-shadow: 0 0 12px rgba(224, 164, 88, 0.55);
     filter: brightness(1.18);
+    /* Pointer on it → stop advertising. Dropping the animation hands the colour
+       back to the inline amber, so hover is the full-strength state. */
+    animation: none;
   }
 }
 

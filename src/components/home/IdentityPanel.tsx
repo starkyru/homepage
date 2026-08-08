@@ -188,6 +188,11 @@ export default function IdentityPanel({
                     : "I'm boring. Show the plain text resume instead."
                 }
               >
+                {/* Decorative: the accessible name is the aria-label above, so
+                    the arrow must not reach the accessibility tree twice. */}
+                <span aria-hidden='true' className='chain-boring__arrow'>
+                  →
+                </span>
                 {boring
                   ? 'Bring the chain back!'
                   : "I'm boring. Show the plain text resume instead."}
