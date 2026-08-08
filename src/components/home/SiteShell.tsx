@@ -26,6 +26,7 @@ import {
   PANEL_W,
   SOCIALS,
 } from './model';
+import { reset as resetWorld } from './physics';
 import SkillChain from './SkillChain';
 import SkillChainMobile from './SkillChainMobile';
 import StaticShowcase from './StaticShowcase';
@@ -137,12 +138,6 @@ export default function SiteShell({ children }: { children: ReactNode }) {
   const [routePhase, setRoutePhase] = useState<RoutePhase | null>(null);
   const resetRef = useRef<() => void>(() => undefined);
   const mobileScrollRef = useRef<HTMLDivElement>(null);
-
-  const toggleBoring = useCallback(() => {
-    setReviving(boring); // leaving boring mode → play the palette back up
-    setPhase(boring ? 'to-chain' : 'to-boring');
-    setBoring((v) => !v);
-  }, [boring]);
 
   // The route transition has to be picked up in the *same* render the pathname
   // changes in, so this is React's "adjust state during render" pattern rather
@@ -313,6 +308,27 @@ export default function SiteShell({ children }: { children: ReactNode }) {
     () => (isMobile && chainReady ? buildMobileScene(width) : null),
     [isMobile, chainReady, width],
   );
+
+  // Declared down here, below the scenes it resets, rather than up with the
+  // other state.
+  const toggleBoring = useCallback(() => {
+    // Boring mode unmounts the chain but keeps its world — so a chip snapped
+    // off before the swap is still lying wherever it fell when the chain comes
+    // back. Its rod is only hidden while the hook that snapped it is alive, and
+    // that hook died with the unmounted chain, so the rod returns drawn from
+    // the card all the way down to the floor. Put the scene back to its rest
+    // pose first: the chips are re-welded and the chain drops in whole.
+    //
+    // In the handler, not an effect — an effect runs after the commit that
+    // mounts the chain, which is one painted frame of exactly the wrong thing.
+    if (boring) {
+      if (scene) resetWorld(scene.world);
+      if (mobileScene) resetWorld(mobileScene.world);
+    }
+    setReviving(boring); // leaving boring mode → play the palette back up
+    setPhase(boring ? 'to-chain' : 'to-boring');
+    setBoring((v) => !v);
+  }, [boring, scene, mobileScene]);
 
   // Warmed but never shown → the scene is ready and the chain stays unmounted.
   // Mounting it parked would spend its drop-in entrance off-stage, where the
