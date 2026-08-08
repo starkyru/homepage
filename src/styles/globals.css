@@ -292,6 +292,36 @@ html.dark {
   }
 
   /*
+   * Mobile experience boxes.
+   *
+   * The resting shadow lives here rather than inline — the opposite of the
+   * .chain-btn rule above — precisely so :hover can own box-shadow outright and
+   * spend it all on the glow. Nothing here touches transform: the physics loop
+   * writes that property on this element every frame, and a transition on it
+   * would smear the simulation instead of the box following the rope.
+   */
+  .chain-box {
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .chain-box {
+      transition: box-shadow 0.22s ease;
+    }
+  }
+
+  /* Gated on a real pointer: these are the touch surface itself, and a tap
+     would otherwise leave one box glowing until the next tap landed elsewhere. */
+  @media (hover: hover) {
+    .chain-box:hover {
+      box-shadow:
+        0 14px 30px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(224, 164, 88, 0.45),
+        0 0 26px -4px rgba(224, 164, 88, 0.5);
+    }
+  }
+
+  /*
    * Social links (GitHub / LinkedIn / Email) in the identity panel.
    *
    * The rule is a pseudo-element rather than text-decoration so it can grow

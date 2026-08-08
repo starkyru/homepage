@@ -34,7 +34,11 @@ export const CARD_W = 260;
 
 // Mobile chrome heights: the fixed top header (ilia.to + CTAs) and the bottom
 // accordion nav bar. Used to pad the scroller and to centre boxes on nav.
-export const MOBILE_HEADER_H = 112;
+// Two rows at 10px padding and an 8px gap: the CTA pair (~36px with the outline
+// button's border) over the socials line (~18px). 84 leaves a few px of slack
+// for font metrics — the header has a fixed height, so content that outgrows it
+// would spill past the hairline rather than push it down.
+export const MOBILE_HEADER_H = 84;
 export const MOBILE_NAV_H = 72;
 
 // ---------------------------------------------------------------------------
@@ -513,6 +517,27 @@ const MB_CHIP_CORNER = 30; // keep chips off the rounded corners
 const MB_CHIP_R = 20;
 const MB_CHIP_SLOT = 46; // vertical space reserved per chip on an edge
 const BOX_MASS = 3.4; // heavy → more inertia, calmer sway
+/**
+ * Rope nodes here are 8x the desktop's ROPE_MASS, and that is what makes the
+ * strand settle at all. Desktop ropes carry one card each; this one is serial,
+ * so its top node carries every box, chip and node below it — ~60 mass units
+ * against a node of 1. Box2D's sequential-impulse solver cannot hold a ratio
+ * that wide: the light node between a pinned anchor and the whole strand gets
+ * thrown around, and the scene never drops under the sleep tolerance, so it
+ * jitters at ~1px forever and pays full solver cost doing it. The top node was
+ * the fastest body in the scene in 421 of 482 frames, peaking at 124 px/s on a
+ * strand nobody had touched.
+ *
+ * Measured on the built scene, shoving one box sideways and waiting for the
+ * whole world to sleep: 1, 2 and 4 never sleep at all (>15s, residual 5+ px/s);
+ * 8 sleeps in ~0.4s; 12 and 20 sleep but take 1.7s and 2.7s, since a heavier
+ * rope carries more of its own momentum. 8 is both the floor and the fastest.
+ *
+ * This is the "within about an order of magnitude of what it carries" rule a
+ * few lines up, and it is a floor, not a preference — no amount of damping
+ * substitutes for it, because the solver re-injects the energy every step.
+ */
+const MB_ROPE_MASS = 8;
 
 // Minimum box height from the short blurb; grown further if the chips on one
 // side need more vertical room. Fixed height so the physics bottom-centre lines
@@ -627,7 +652,11 @@ export function buildMobileScene(vw: number): MobileScene {
     w: vw,
     h: worldH,
     gravity: 2400,
-    damping: 0.94,
+    // Damped harder than the desktop's 0.93. There each card hangs on its own
+    // rope and only has to lose its own energy; here one serial strand feeds
+    // every box's swing into the boxes below it, so the same retention leaves
+    // the rope drifting long after the scroll that started it. ~2x the drag.
+    damping: 0.88,
     floor: 10,
     // Rigid here: this is one serial strand, so every rope also carries the
     // boxes below it and any give compounds — even at 24 Hz the last box ends up
@@ -672,7 +701,7 @@ export function buildMobileScene(vw: number): MobileScene {
         x: cx,
         y,
         r: 4,
-        mass: ROPE_MASS,
+        mass: MB_ROPE_MASS,
         rotates: false,
       });
       ropeSticks.push(link(world, prev, node.point));

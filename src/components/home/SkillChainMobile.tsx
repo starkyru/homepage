@@ -21,17 +21,41 @@ import {
 import SkillChainStackBall from './StackBall';
 import { useMobileChain } from './useMobileChain';
 
+/**
+ * A blurb reaches the box cut off in either of two ways, and both mean the same
+ * thing to a reader: the box is not showing all of it. The parser elides the
+ * summary itself at 130 characters, which is why most boxes end in an ellipsis;
+ * separately, the rendered text can outgrow the box, because the box height
+ * comes from a characters-per-line estimate that real word wrapping beats.
+ *
+ * "There is more in the panel" is deliberately NOT the test — every panel holds
+ * more than its box (294–2561 characters against 87–130), so that would label
+ * every box and tell the reader nothing.
+ */
+const ELIDED = /(?:…|\.\.\.)\s*$/;
+
 interface Props {
   scene: MobileScene;
   scrollRef: RefObject<HTMLDivElement | null>; // the outer vertical scroller
+  // Carries the palette revive. It goes on the stage and the accordion rather
+  // than on the scroller around them: the revive animates `filter`, and a
+  // filtered ancestor would become the containing block for the accordion's
+  // position: fixed and park it mid-screen until the animation ended.
+  className?: string;
 }
 
 // Mobile view of the chain: a fixed logo circle on top, then experience boxes
 // (with snappable tech chips) hanging in one linked strand. A bottom accordion
 // tracks the box nearest the viewport centre and steps through them.
-export default function SkillChainMobile({ scene, scrollRef }: Props) {
+export default function SkillChainMobile({
+  scene,
+  scrollRef,
+  className,
+}: Props) {
   const stageRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
+  // Which boxes clip their blurb — indexed by box index, drives "Read more…".
+  const [clipped, setClipped] = useState<boolean[]>([]);
   const P = (i: number) => scene.world.points[i];
 
   // --- eased vertical scroll (nav buttons) ---------------------------------
@@ -63,6 +87,13 @@ export default function SkillChainMobile({ scene, scrollRef }: Props) {
     },
     [ease],
   );
+  const cancelEase = useCallback(() => {
+    targetRef.current = null;
+    if (rafRef.current != null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  }, []);
 
   // content y at the centre of the clear band (between header and nav bar)
   const bandCenter = useCallback(() => {
@@ -78,6 +109,7 @@ export default function SkillChainMobile({ scene, scrollRef }: Props) {
   const [panelUp, setPanelUp] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const keepOpenRef = useRef(false);
+  const accordionRef = useRef<HTMLDivElement>(null);
   const reExpandTimer = useRef<number | null>(null);
   const swapTimer = useRef<number | null>(null);
   const animateTitleSwapRef = useRef(false);
@@ -148,6 +180,60 @@ export default function SkillChainMobile({ scene, scrollRef }: Props) {
     openBox,
   );
 
+  // Which boxes actually clip has to be measured, not derived: the box height
+  // comes from a characters-per-line estimate in `mobileCardHeight`, and real
+  // wrapping loses whatever a word could not fill at each line end, so a blurb
+  // routinely needs a line more than the estimate bought it. Measured after
+  // `fonts.ready` — the fallback face wraps differently, so measuring at first
+  // paint would label the wrong boxes.
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    let live = true;
+    const measure = () => {
+      if (!live) return;
+      const next: boolean[] = [];
+      stage.querySelectorAll<HTMLElement>('[data-card]').forEach((el) => {
+        next[Number(el.dataset.card)] = el.scrollHeight > el.clientHeight + 1;
+      });
+      setClipped(next);
+    };
+    if (document.fonts) document.fonts.ready.then(measure);
+    else measure();
+    return () => {
+      live = false;
+    };
+  }, [scene]);
+
+  // Tapping a box centres it with an eased scroll and pins its panel open. Both
+  // of those have to yield the moment the visitor scrolls for themselves: the
+  // animation owns `scrollTop` while it runs, so a swipe against it is written
+  // straight back and reads as "scrolling is broken, it keeps pulling me to the
+  // box". Any scroll gesture on the strand therefore cancels the animation and
+  // drops the keep-open mode. Gestures inside the accordion are excluded — its
+  // own buttons scroll deliberately and manage the mode themselves.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScrollIntent = (e: Event) => {
+      if (accordionRef.current?.contains(e.target as Node)) return;
+      cancelEase();
+      keepOpenRef.current = false;
+      if (reExpandTimer.current != null) {
+        window.clearTimeout(reExpandTimer.current);
+        reExpandTimer.current = null;
+      }
+    };
+    el.addEventListener('pointerdown', onScrollIntent, { passive: true });
+    el.addEventListener('wheel', onScrollIntent, { passive: true });
+    el.addEventListener('keydown', onScrollIntent);
+    return () => {
+      el.removeEventListener('pointerdown', onScrollIntent);
+      el.removeEventListener('wheel', onScrollIntent);
+      el.removeEventListener('keydown', onScrollIntent);
+    };
+  }, [scrollRef, cancelEase]);
+
   // track the centred box on scroll; re-open the panel once scrolling stops
   useEffect(() => {
     const el = scrollRef.current;
@@ -209,6 +295,7 @@ export default function SkillChainMobile({ scene, scrollRef }: Props) {
     <>
       <div
         ref={stageRef}
+        className={className}
         style={{
           position: 'relative',
           width: scene.world.w,
@@ -283,6 +370,7 @@ export default function SkillChainMobile({ scene, scrollRef }: Props) {
               data-bl={b.bl}
               data-br={b.br}
               data-af={b.attach}
+              className='chain-box'
               style={{
                 position: 'absolute',
                 width: scene.cardW,
@@ -295,7 +383,6 @@ export default function SkillChainMobile({ scene, scrollRef }: Props) {
                 overflow: 'hidden',
                 cursor: 'grab',
                 touchAction: 'none',
-                boxShadow: '0 14px 30px rgba(0,0,0,.45)',
                 transformOrigin: `${b.attach * 100}% top`,
                 transform: `translate(${p.x - b.attach * scene.cardW}px, ${p.y}px)`,
                 willChange: 'transform',
@@ -333,6 +420,31 @@ export default function SkillChainMobile({ scene, scrollRef }: Props) {
               >
                 {b.exp.short}
               </p>
+              {/* Out of flow on purpose: the box height is what the rope hangs
+                  from, so an affordance that took layout space would move the
+                  physics. It fades the clipped last line out under itself.
+                  aria-hidden because it is not a control — tapping anywhere on
+                  the box already opens the panel, and the full text is in the
+                  static resume for anything that reads the page. */}
+              {(clipped[b.index] || ELIDED.test(b.exp.short)) && (
+                <div
+                  aria-hidden
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    padding: '20px 18px 10px',
+                    background: `linear-gradient(to top, ${palette.cardBg} 58%, rgba(28,24,19,0))`,
+                    color: palette.amber,
+                    fontSize: 11.5,
+                    fontWeight: 500,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  Read more…
+                </div>
+              )}
             </article>
           );
         })}
@@ -389,6 +501,8 @@ export default function SkillChainMobile({ scene, scrollRef }: Props) {
 
       {/* bottom accordion: details grow upward out of the title row */}
       <div
+        ref={accordionRef}
+        className={className}
         style={{
           position: 'fixed',
           left: 0,

@@ -188,34 +188,41 @@ export default function IdentityPanel({
                     : "I'm boring. Show the plain text resume instead."
                 }
               >
-                {boring ? 'Bring the chain back.' : "I'm boring."}
+                {boring
+                  ? 'Bring the chain back!'
+                  : "I'm boring. Show the plain text resume instead."}
               </button>
             </p>
           )}
         </div>
       )}
-      <div
-        style={{
-          marginTop: floating ? 'auto' : 8,
-          display: 'flex',
-          gap: 16,
-          fontSize: 13,
-          justifyContent: mobile ? 'center' : undefined,
-        }}
-      >
-        {SOCIALS.map((s) => (
-          <a
-            key={s.label}
-            href={s.href}
-            target={s.href.startsWith('http') ? '_blank' : undefined}
-            rel={s.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-            className='chain-social'
-            style={{ color: palette.amber, textDecoration: 'none' }}
-          >
-            {s.label} ↗
-          </a>
-        ))}
-      </div>
+      {/* On mobile these sit in the fixed header, under the CTAs, so that the
+          contact links do not need a scroll back to the top to reach. */}
+      {!mobile && (
+        <div
+          style={{
+            marginTop: floating ? 'auto' : 8,
+            display: 'flex',
+            gap: 16,
+            fontSize: 13,
+          }}
+        >
+          {SOCIALS.map((s) => (
+            <a
+              key={s.label}
+              href={s.href}
+              target={s.href.startsWith('http') ? '_blank' : undefined}
+              rel={
+                s.href.startsWith('http') ? 'noopener noreferrer' : undefined
+              }
+              className='chain-social'
+              style={{ color: palette.amber, textDecoration: 'none' }}
+            >
+              {s.label} ↗
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

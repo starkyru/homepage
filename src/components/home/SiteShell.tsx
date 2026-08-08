@@ -24,6 +24,7 @@ import {
   MOBILE_NAV_H,
   palette,
   PANEL_W,
+  SOCIALS,
 } from './model';
 import SkillChain from './SkillChain';
 import SkillChainMobile from './SkillChainMobile';
@@ -431,10 +432,10 @@ export default function SiteShell({ children }: { children: ReactNode }) {
                 height: MOBILE_HEADER_H,
                 zIndex: 7,
                 boxSizing: 'border-box',
-                padding: '12px 16px',
+                padding: '10px 16px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 10,
+                gap: 8,
                 background: 'rgba(16,14,11,.96)',
                 borderBottom: `1px solid ${palette.hairline}`,
                 backdropFilter: 'blur(4px)',
@@ -456,13 +457,48 @@ export default function SiteShell({ children }: { children: ReactNode }) {
                   Download resume (PDF)
                 </a>
               </div>
+              {/* LinkedIn / GitHub / Email — the mobile panel drops its own copy
+                  of this row, so these stay reachable without scrolling back up
+                  and the header keeps a single owner for the contact links. */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: 16,
+                  fontSize: 12.5,
+                }}
+              >
+                {SOCIALS.map((s) => (
+                  <a
+                    key={s.label}
+                    href={s.href}
+                    target={s.href.startsWith('http') ? '_blank' : undefined}
+                    rel={
+                      s.href.startsWith('http')
+                        ? 'noopener noreferrer'
+                        : undefined
+                    }
+                    className='chain-social'
+                    style={{ color: palette.amber, textDecoration: 'none' }}
+                  >
+                    {s.label} ↗
+                  </a>
+                ))}
+              </div>
             </header>
 
             {/* Mobile has no drop-in animation, so the chain is inside here and
-                revives along with everything else — as it should. */}
+                revives along with everything else — as it should.
+
+                The revive is a `filter` animation, and a filtered element is the
+                containing block for its position: fixed descendants. Hung on
+                this scroller it therefore re-anchored the chain's accordion to
+                the scroller's box for the two seconds it ran, which dropped the
+                bar into the middle of the screen and then snapped it back. So
+                each child carries the class instead — including the accordion,
+                whose own filter does not affect where it fixes itself. */}
             <div
               ref={mobileScrollRef}
-              className={revive}
               style={{
                 position: 'relative',
                 height: '100dvh',
@@ -473,6 +509,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
             >
               <IdentityPanel
                 variant='mobile'
+                className={revive}
                 onBoring={toggleBoring}
                 boring={boring}
               />
@@ -482,6 +519,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
                 <SkillChainMobile
                   scene={mobileScene}
                   scrollRef={mobileScrollRef}
+                  className={revive}
                 />
               )}
             </div>
