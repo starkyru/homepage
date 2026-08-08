@@ -34,6 +34,10 @@ import { useMobileChain } from './useMobileChain';
  */
 const ELIDED = /(?:…|\.\.\.)\s*$/;
 
+// How long the detail sheet takes to open or close. Drives both the CSS
+// transition and the scroll lock that covers it, so the two cannot drift.
+const SHEET_MS = 320;
+
 interface Props {
   scene: MobileScene;
   scrollRef: RefObject<HTMLDivElement | null>; // the outer vertical scroller
@@ -58,34 +62,92 @@ export default function SkillChainMobile({
   const [clipped, setClipped] = useState<boolean[]>([]);
   const P = (i: number) => scene.world.points[i];
 
+  // --- scroll lock ----------------------------------------------------------
+  // A tap on the bottom bar drives the scroller itself: the arrows ease it to
+  // the next box, and the title row animates the sheet up over it. The
+  // visitor's own scrolling on top of that either fights the rAF loop for
+  // `scrollTop` or trips the scroll handler that shuts the sheet again — so the
+  // scroller is frozen for as long as the tap's animation owns it. Both windows
+  // are under a second, and neither can start without a deliberate tap.
+  //
+  // A class rather than an inline style: the scroller belongs to the shell,
+  // which sets its overflow inline, and writing over that would leave this
+  // component restoring a value it does not define. It also has to come off on
+  // unmount — boring mode swaps this component out for the plain resume inside
+  // the same scroller, which would inherit a frozen one.
+  const easeLock = useRef(false);
+  const tapLock = useRef(false);
+  const tapLockTimer = useRef<number | null>(null);
+  const syncLock = useCallback(() => {
+    scrollRef.current?.classList.toggle(
+      'chain-locked',
+      easeLock.current || tapLock.current,
+    );
+  }, [scrollRef]);
+  // Always timed, so a lock can outlive the animation it was taken for but can
+  // never stick.
+  const lockForTap = useCallback(
+    (ms: number) => {
+      tapLock.current = true;
+      syncLock();
+      if (tapLockTimer.current != null)
+        window.clearTimeout(tapLockTimer.current);
+      tapLockTimer.current = window.setTimeout(() => {
+        tapLockTimer.current = null;
+        tapLock.current = false;
+        syncLock();
+      }, ms);
+    },
+    [syncLock],
+  );
+
   // --- eased vertical scroll (nav buttons) ---------------------------------
   const targetRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
+  const endEase = useCallback(() => {
+    targetRef.current = null;
+    rafRef.current = null;
+    easeLock.current = false;
+    syncLock();
+  }, [syncLock]);
   const ease = useCallback(() => {
     const el = scrollRef.current;
     if (!el || targetRef.current == null) {
-      rafRef.current = null;
+      endEase();
       return;
     }
     const diff = targetRef.current - el.scrollTop;
     if (Math.abs(diff) < 0.5) {
       el.scrollTop = targetRef.current;
-      targetRef.current = null;
-      rafRef.current = null;
+      endEase();
       return;
     }
+    const before = el.scrollTop;
     el.scrollTop += diff * 0.16;
+    // The browser rounds scrollTop to its own sub-pixel grid, so the tail of an
+    // exponential ease can round away to nothing while the remaining distance
+    // is still over the 0.5px finish line. The loop then spins forever a
+    // fraction of a pixel short. It used to do that invisibly; now it would
+    // hold the scroll lock open with it, which is how it was found.
+    if (el.scrollTop === before) {
+      endEase();
+      return;
+    }
     rafRef.current = requestAnimationFrame(ease);
-  }, [scrollRef]);
+  }, [scrollRef, endEase]);
   const scrollTo = useCallback(
     (value: number) => {
       const el = scrollRef.current;
       if (!el) return;
       const max = el.scrollHeight - el.clientHeight;
       targetRef.current = Math.max(0, Math.min(max, value));
+      // Held until the ease lands rather than for a fixed time: the ease is
+      // exponential, so how long it takes is a function of the distance.
+      easeLock.current = true;
+      syncLock();
       if (rafRef.current == null) rafRef.current = requestAnimationFrame(ease);
     },
-    [ease],
+    [ease, syncLock],
   );
   const cancelEase = useCallback(() => {
     targetRef.current = null;
@@ -93,7 +155,19 @@ export default function SkillChainMobile({
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
-  }, []);
+    easeLock.current = false;
+    syncLock();
+  }, [syncLock]);
+
+  useEffect(
+    () => () => {
+      if (tapLockTimer.current != null)
+        window.clearTimeout(tapLockTimer.current);
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      scrollRef.current?.classList.remove('chain-locked');
+    },
+    [scrollRef],
+  );
 
   // content y at the centre of the clear band (between header and nav bar)
   const bandCenter = useCallback(() => {
@@ -221,6 +295,10 @@ export default function SkillChainMobile({
     if (!el) return;
     const onScrollIntent = (e: Event) => {
       if (accordionRef.current?.contains(e.target as Node)) return;
+      // Frozen → the gesture is not moving anything, so there is nothing to
+      // yield to. Cancelling here would stop the animation the visitor just
+      // asked for while the scroller is still locked against them.
+      if (easeLock.current || tapLock.current) return;
       cancelEase();
       keepOpenRef.current = false;
       if (reExpandTimer.current != null) {
@@ -533,7 +611,7 @@ export default function SkillChainMobile({
             border: `1px solid ${palette.cardBorder}`,
             borderBottom: 'none',
             borderRadius: '10px 10px 0 0',
-            transition: 'max-height .32s ease, opacity .28s ease',
+            transition: `max-height ${SHEET_MS}ms ease, opacity 280ms ease`,
           }}
         >
           <div style={{ padding: '14px 18px' }}>
@@ -590,6 +668,10 @@ export default function SkillChainMobile({
           <button
             type='button'
             onClick={() => {
+              // The sheet is 300px of movement over the strand; a scroll
+              // underneath it during those 320ms also fires the handler that
+              // shuts it, so it would flick open and straight back down.
+              lockForTap(SHEET_MS);
               setExpanded((v) => {
                 const next = !v;
                 keepOpenRef.current = next;

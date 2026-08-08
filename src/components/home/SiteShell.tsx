@@ -519,6 +519,13 @@ export default function SiteShell({ children }: { children: ReactNode }) {
                 position: 'relative',
                 height: '100dvh',
                 overflowY: 'auto',
+                // The chain freezes this element (.chain-locked) while the
+                // bottom bar animates it. Where the scrollbar takes real width
+                // — a desktop browser narrowed under the physics breakpoint —
+                // that would otherwise reflow the column twice per tap. Mobile
+                // has overlay scrollbars, where the gutter is zero and this
+                // does nothing.
+                scrollbarGutter: 'stable',
                 paddingTop: MOBILE_HEADER_H,
                 paddingBottom: mobilePadBottom,
               }}

@@ -671,6 +671,25 @@ html.dark {
   }
 }
 
+/*
+ * Freezes the mobile scroller while a tap on the bottom bar is animating it.
+ *
+ * `overflow-y` rather than `touch-action`, because it is the only one of the
+ * two that also stops momentum already in flight — a fling still running when
+ * the visitor taps an arrow is exactly the case this exists for. `touch-action`
+ * comes along to stop a new gesture on the empty parts of the strand (the boxes
+ * set it themselves, to drag rather than scroll).
+ *
+ * !important because the scroller's overflow is set inline by the shell that
+ * owns the element. Applied through classList, so — like the crossover rules
+ * below — it has to stay out of @layer utilities, which Tailwind tree-shakes
+ * against the class names it can find by scanning source.
+ */
+.chain-locked {
+  overflow-y: hidden !important;
+  touch-action: none;
+}
+
 /* ==========================================================================
  * Boring-mode crossover: the chain lets go and drops out of frame, the arrows
  * fly out sideways, the accordion sinks, and the plain resume rises to take
