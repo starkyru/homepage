@@ -1,7 +1,17 @@
 import { RefObject, useCallback, useEffect, useRef } from 'react';
 
 import { MOBILE_HEADER_H, MOBILE_NAV_H, type MobileScene } from './model';
-import { step } from './physics';
+import {
+  breakStick,
+  clampSpeed,
+  dragTo,
+  grab,
+  maxSpeed,
+  nudge,
+  release,
+  reset as resetWorld,
+  step,
+} from './physics';
 
 // Round transforms to 0.1px so a settled node writes an identical string
 // frame-to-frame; identical writes are skipped (keeps native tooltips alive and
@@ -61,17 +71,7 @@ export function useMobileChain(
   onBoxClickRef.current = onBoxClick;
 
   const reset = useCallback(() => {
-    const { world, rest } = scene;
-    for (let i = 0; i < world.points.length; i++) {
-      const p = world.points[i];
-      const r = rest[i];
-      p.x = r.x;
-      p.y = r.y;
-      p.px = r.x;
-      p.py = r.y;
-      p.held = false;
-    }
-    for (const s of world.sticks) s.broken = false;
+    resetWorld(scene.world); // restores the rest pose and re-welds every chip
     snappedRef.current.clear();
   }, [scene]);
 
@@ -150,9 +150,13 @@ export function useMobileChain(
         const p = world.points[n.point];
         const base = `translate(${r1(p.x - n.w / 2)}px, ${r1(p.y - n.h / 2)}px)`;
         let tf: string;
-        if (n.chip && !snapped.has(n.id)) {
-          const f = frames.get(n.cardPv);
-          tf = f ? `${base} rotate(${r1(f.deg)}deg)` : base;
+        if (n.chip) {
+          // Bolted on, a chip spins with its box; cut loose it tumbles and rolls
+          // on its own, so take the angle straight off its body.
+          const deg = snapped.has(n.id)
+            ? (p.body.getAngle() * 180) / Math.PI
+            : frames.get(n.cardPv)?.deg;
+          tf = deg === undefined ? base : `${base} rotate(${r1(deg)}deg)`;
         } else {
           tf = base;
         }
@@ -194,7 +198,7 @@ export function useMobileChain(
     };
 
     // Vertical scroll → the hanging masses lag behind the anchors when the
-    // scroll speed changes, so the strand bobs. Scaled by inverse mass (im).
+    // scroll speed changes, so the strand bobs.
     const scroller = scrollRef.current;
     let prevScroll = scroller?.scrollTop ?? 0;
     let prevVel = 0;
@@ -206,29 +210,17 @@ export function useMobileChain(
       prevScroll = st;
       prevVel = vel;
       if (Math.abs(acc) < 0.05) return;
-      const k = 0.06;
-      for (const p of world.points) {
-        if (p.pinned || p.held) continue;
-        p.py += acc * k * p.im;
-      }
+      nudge(world, 0, -acc * 0.06);
     };
 
-    // Reveal cue: fire once the fastest node has crawled for a few frames.
+    // Reveal cue: fire once the fastest body has crawled for a few frames.
     let settleFrames = 0;
     let frameCount = 0;
     let settledFired = false;
     const checkSettled = () => {
       if (settledFired) return;
       frameCount++;
-      let maxV = 0;
-      for (const p of world.points) {
-        if (p.pinned) continue;
-        const dx = p.x - p.px;
-        const dy = p.y - p.py;
-        const v = dx * dx + dy * dy;
-        if (v > maxV) maxV = v;
-      }
-      if (maxV < 0.12) settleFrames++;
+      if (maxSpeed(world) < 0.35) settleFrames++;
       else settleFrames = 0;
       if (settleFrames >= 5 || frameCount >= 200) {
         settledFired = true;
@@ -243,7 +235,6 @@ export function useMobileChain(
     };
 
     let dragPoint = -1;
-    let dragOff = { x: 0, y: 0 };
     let dragStart = { x: 0, y: 0 };
     let dragClient = { x: 0, y: 0 }; // last pointer position (viewport coords)
     let pressCardIdx = -1;
@@ -269,70 +260,23 @@ export function useMobileChain(
       const next = Math.max(0, Math.min(max, scroller.scrollTop + dy));
       if (next === scroller.scrollTop) return; // already at the end
       scroller.scrollTop = next;
-      // re-pin the dragged box to the pointer now that the content shifted
+      // re-aim the drag at the pointer now that the content shifted under it
       const rect = stage.getBoundingClientRect();
-      const p = world.points[dragPoint];
-      p.px = p.x; // carry the motion as velocity → natural release
-      p.py = p.y;
-      p.x = dragClient.x - rect.left - dragOff.x;
-      p.y = dragClient.y - rect.top - dragOff.y;
+      dragTo(world, dragClient.x - rect.left, dragClient.y - rect.top);
     };
 
-    // Speed limiter: a serial pendulum chain has no bending stiffness, so a
-    // hard fling can whip a box past vertical, flip it upside-down, and tangle
-    // the whole strand. Capping every node's per-frame velocity bleeds off that
-    // energy so the chain can swing but never blows up. Held (dragged) nodes are
-    // capped too, which also tames the release throw.
+    // Speed limiter: a serial pendulum chain has no bending stiffness, so a hard
+    // fling can whip a box around and tangle the whole strand. Capping speed
+    // bleeds off that energy so the chain can swing but never blows up. (The
+    // tilt limit that used to live here is now a limit on the rope hinge itself,
+    // so a box simply cannot rotate past it — see BOX_TILT in model.ts.)
     const MAX_STEP = 44; // px/frame — well above a normal drag, kills flings
-    const clampVelocity = () => {
-      for (const p of world.points) {
-        if (p.pinned) continue;
-        const vx = p.x - p.px;
-        const vy = p.y - p.py;
-        const sp = Math.hypot(vx, vy);
-        if (sp > MAX_STEP) {
-          const s = MAX_STEP / sp;
-          p.px = p.x - vx * s;
-          p.py = p.y - vy * s;
-        }
-      }
-    };
-
-    // Hard tilt limit: a box may swing, but its rigid quad is rotated back about
-    // the rope anchor (Pv) if the bottom edge tilts past ±LIMIT — so a box can
-    // never flip upside-down or fold the strand over itself, no matter how hard
-    // it's flung. Previous positions rotate with it, so no velocity is injected.
-    const TILT_LIMIT = (48 * Math.PI) / 180;
-    const clampBoxAngles = () => {
-      for (const b of scene.boxes) {
-        const pv = world.points[b.point];
-        const bl = world.points[b.bl];
-        const br = world.points[b.br];
-        const ang = Math.atan2(br.y - bl.y, br.x - bl.x);
-        if (Math.abs(ang) <= TILT_LIMIT) continue;
-        const d = Math.max(-TILT_LIMIT, Math.min(TILT_LIMIT, ang)) - ang;
-        const cos = Math.cos(d);
-        const sin = Math.sin(d);
-        for (const idx of [b.bl, b.br, b.bc]) {
-          const p = world.points[idx];
-          const dx = p.x - pv.x;
-          const dy = p.y - pv.y;
-          p.x = pv.x + dx * cos - dy * sin;
-          p.y = pv.y + dx * sin + dy * cos;
-          const pdx = p.px - pv.x;
-          const pdy = p.py - pv.y;
-          p.px = pv.x + pdx * cos - pdy * sin;
-          p.py = pv.y + pdx * sin + pdy * cos;
-        }
-      }
-    };
 
     const loop = () => {
       edgeScroll();
       applyScrollInertia();
-      clampVelocity();
-      step(world, 26); // extra iterations keep the linked chain from stretching
-      clampBoxAngles();
+      clampSpeed(world, MAX_STEP);
+      step(world);
       render();
       checkSettled();
       rafRef.current = requestAnimationFrame(loop);
@@ -343,7 +287,7 @@ export function useMobileChain(
       const sticks = chipSticksById.get(id);
       if (!sticks) return;
       snapped.add(id);
-      for (const s of sticks) world.sticks[s].broken = true; // cut links → drops
+      for (const s of sticks) breakStick(world, s); // cut the weld → it drops
     };
 
     const onDown = (e: PointerEvent) => {
@@ -355,9 +299,7 @@ export function useMobileChain(
         dragStart = { x: e.clientX, y: e.clientY };
         dragClient = { x: e.clientX, y: e.clientY };
         const l = local(e);
-        const p = world.points[dragPoint];
-        dragOff = { x: l.x - p.x, y: l.y - p.y };
-        p.held = true;
+        grab(world, dragPoint, l.x, l.y); // anchors the body under the pointer
         e.preventDefault();
         return;
       }
@@ -372,16 +314,12 @@ export function useMobileChain(
       if (dragPoint < 0) return;
       dragClient = { x: e.clientX, y: e.clientY };
       const l = local(e);
-      const p = world.points[dragPoint];
-      p.px = p.x;
-      p.py = p.y;
-      p.x = l.x - dragOff.x;
-      p.y = l.y - dragOff.y;
+      dragTo(world, l.x, l.y);
     };
 
     const onUp = (e: PointerEvent) => {
       if (dragPoint >= 0) {
-        world.points[dragPoint].held = false;
+        release(world); // lets go carrying whatever momentum it built up
         dragPoint = -1;
         const moved = Math.hypot(
           e.clientX - dragStart.x,
@@ -419,6 +357,7 @@ export function useMobileChain(
     return () => {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
+      release(world); // never leave a drag joint behind on unmount
       stage.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);

@@ -317,7 +317,7 @@ export default function SkillChainMobile({ scene, scrollRef }: Props) {
               <div
                 style={{
                   fontSize: 11.5,
-                  color: 'rgba(236,231,221,.5)',
+                  color: 'rgba(236,231,221,.6)',
                   marginTop: 2,
                 }}
               >
@@ -427,7 +427,7 @@ export default function SkillChainMobile({ scene, scrollRef }: Props) {
             <div
               style={{
                 fontSize: 11.5,
-                color: 'rgba(236,231,221,.5)',
+                color: 'rgba(236,231,221,.6)',
                 marginTop: 2,
               }}
             >
@@ -464,6 +464,7 @@ export default function SkillChainMobile({ scene, scrollRef }: Props) {
             type='button'
             aria-label='Previous role'
             onClick={() => go(-1)}
+            className='chain-nav'
             style={navBtn}
           >
             <FiChevronUp size={20} />
@@ -525,6 +526,7 @@ export default function SkillChainMobile({ scene, scrollRef }: Props) {
             type='button'
             aria-label='Next role'
             onClick={() => go(1)}
+            className='chain-nav'
             style={navBtn}
           >
             <FiChevronDown size={20} />

@@ -1,11 +1,17 @@
 import type { Metadata } from 'next';
 
-import HangingChainHome from '@/components/home/HangingChainHome';
+import { profilePageLd } from '@/lib/structured-data';
 
 export const metadata: Metadata = {
   alternates: { canonical: '/' },
 };
 
+/** Structured data only — the view is SiteShell's, in the root layout. */
 export default function HomePage() {
-  return <HangingChainHome />;
+  return (
+    <script
+      type='application/ld+json'
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(profilePageLd()) }}
+    />
+  );
 }

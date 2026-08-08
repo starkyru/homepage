@@ -23,7 +23,7 @@ export default function Navigation() {
 
   if (pathname === '/projects') {
     return (
-      <nav className='fixed left-4 top-4 z-40 font-primary'>
+      <nav className='projects-back fixed left-4 top-4 z-40 font-primary'>
         <Link
           href='/'
           className='inline-flex items-center gap-2 rounded-lg border border-amber-200/20 bg-[#100e0b]/85 px-3 py-2 text-sm font-medium text-[#ece7dd] shadow-sm backdrop-blur-md transition-colors hover:border-amber-200/40 hover:text-[#e0a458] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e0a458] focus-visible:ring-offset-2 focus-visible:ring-offset-[#100e0b]'

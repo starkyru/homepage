@@ -20,7 +20,8 @@
     "format:check": "prettier -c .",
     "postbuild": "next-sitemap --config next-sitemap.config.js",
     "prepare": "husky",
-    "update:resume": "curl -L 'https://docs.google.com/document/d/1FozMEumbKlGOmrFjOYAsLtrpIC0WKh1Y/export?format=html' -o public/resume.html && git add public/resume.html && git commit -m 'docs: update resume'"
+    "logos": "node scripts/fetch-logos.mjs",
+    "update:resume": "node scripts/parse-resume.mjs && node scripts/fetch-logos.mjs && prettier -w src/data/resume.json"
   },
   "dependencies": {
     "@eslint/js": "^10.0.1",
@@ -28,6 +29,7 @@
     "globals": "^17.4.0",
     "lucide-react": "^0.260.0",
     "next": "^16.1.6",
+    "planck": "^1.5.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-icons": "^4.10.1",

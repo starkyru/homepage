@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { CSSProperties } from 'react';
 
 import { INTRO, palette, SOCIALS } from './model';
@@ -8,6 +9,11 @@ interface Props {
   // floating → overlays the desktop physics stage; static → plain SEO flow;
   // mobile → centred column above the vertical chain.
   variant: 'floating' | 'static' | 'mobile';
+  // Which page the panel is standing next to. The panel itself does not change
+  // when the page does — that is the point of it — but the controls that talk
+  // about the chain only make sense while the chain is on screen.
+  page?: 'home' | 'projects';
+  className?: string; // carries the palette revive; see SiteShell
   onReset?: () => void;
   onBoring?: () => void; // swaps the chain for the plain resume
   boring?: boolean; // resume shown → flip the link label back
@@ -15,15 +21,22 @@ interface Props {
 
 export default function IdentityPanel({
   variant,
+  page = 'home',
+  className,
   onReset,
   onBoring,
   boring,
 }: Props) {
   const floating = variant === 'floating';
   const mobile = variant === 'mobile';
-  const showNote = floating || mobile; // chain blurb + "I'm boring" link
+  const onProjects = page === 'projects';
+  // The chain blurb + "I'm boring" link — both about a chain that has slid away.
+  const showNote = (floating || mobile) && !onProjects;
+  // Only one h1 per page: on /projects the page's own heading is the column's.
+  const NameTag = onProjects ? 'p' : 'h1';
   return (
     <div
+      className={className}
       style={{
         ...(floating
           ? {
@@ -46,9 +59,12 @@ export default function IdentityPanel({
                 textAlign: 'center',
               }
             : {
+                // Same 720 column as StaticShowcase below it — the two are one
+                // document in this variant, so they have to share a measure.
                 position: 'relative',
                 width: '100%',
-                maxWidth: 560,
+                maxWidth: 720,
+                margin: '0 auto',
                 padding: '48px 24px 8px',
               }),
         zIndex: 2,
@@ -57,23 +73,15 @@ export default function IdentityPanel({
         display: 'flex',
         flexDirection: 'column',
         gap: 20,
-        overflow: 'hidden',
+        // The floating panel is pinned top-to-bottom, so a long summary from the
+        // doc would otherwise clip the CTAs below it on short viewports.
+        overflowX: 'hidden',
+        overflowY: floating ? 'auto' : 'hidden',
+        scrollbarWidth: 'thin',
       }}
     >
-      {/* ilia.to + the CTA buttons live in the fixed header on mobile */}
-      {!mobile && (
-        <div
-          style={{
-            fontFamily: serif,
-            fontStyle: 'italic',
-            fontSize: 20,
-            color: palette.amber,
-          }}
-        >
-          ilia.to
-        </div>
-      )}
-      <h1
+      {/* the CTA buttons live in the fixed header on mobile */}
+      <NameTag
         style={{
           margin: 0,
           fontFamily: serif,
@@ -84,7 +92,7 @@ export default function IdentityPanel({
         }}
       >
         Ilia Dzhiubanskii
-      </h1>
+      </NameTag>
       <div style={{ fontSize: 14, lineHeight: 1.5, color: palette.amber }}>
         Senior Frontend / Full-Stack Engineer
         <br />
@@ -98,24 +106,47 @@ export default function IdentityPanel({
             lineHeight: 1.6,
             color: 'rgba(236,231,221,.78)',
             textWrap: 'pretty',
+            // The static column is as wide as the resume below it; the prose
+            // still wants a readable measure (WCAG 1.4.8 caps it at 80 chars).
+            maxWidth: '68ch',
           } as CSSProperties
         }
       >
         {INTRO}
       </p>
       {!mobile && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <a href='/projects' style={btnPrimary}>
-            Projects
-          </a>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+            maxWidth: floating ? undefined : 320,
+          }}
+        >
+          {/* next/link, not a bare anchor: the two pages share this panel and
+              the chain behind it, so the change is a transition inside the shell
+              — a document navigation would throw both away and rebuild them. */}
+          <Link
+            href={onProjects ? '/' : '/projects'}
+            className='chain-btn chain-btn--primary'
+            style={btnPrimary}
+          >
+            {onProjects ? '← Back to the chain' : 'Projects'}
+          </Link>
           <a
             href='https://docs.google.com/document/d/1FozMEumbKlGOmrFjOYAsLtrpIC0WKh1Y/export?format=pdf'
+            className='chain-btn chain-btn--outline'
             style={btnOutline}
           >
             Download resume (PDF)
           </a>
-          {floating && onReset && !boring && (
-            <button type='button' onClick={onReset} style={btnGhost}>
+          {floating && onReset && !boring && !onProjects && (
+            <button
+              type='button'
+              onClick={onReset}
+              className='chain-btn chain-btn--ghost'
+              style={btnGhost}
+            >
               ↺ Reset chain
             </button>
           )}
@@ -132,15 +163,34 @@ export default function IdentityPanel({
             ...(mobile ? { width: '100%' } : {}),
           }}
         >
-          This chain is live. Scroll or use the arrows to move along it, drag
-          any card to swing it, and click a tech logo to snap it off the chain.
+          {/* Instructions for a UI that is not on screen are worse than no
+              instructions — in boring mode the chain they describe is gone. */}
+          <p style={{ margin: 0 }}>
+            {boring
+              ? 'Plain text, top to bottom. This is the whole resume.'
+              : 'This chain is live. Scroll or use the arrows to move along it, drag any card to swing it, and click a tech logo to snap it off the chain.'}
+          </p>
           {onBoring && (
-            <>
-              {' '}
-              <button type='button' onClick={onBoring} style={boringLink}>
+            /* Its own line, not trailing the blurb: the control is the one
+               thing here you can act on, and inline it reads as prose. */
+            <p style={{ margin: '8px 0 0' }}>
+              {/* The visible label is a joke; the accessible name has to say
+                  what the control actually does (WCAG 2.4.6 / 2.5.3 — the
+                  visible text is a subset of the accessible name). */}
+              <button
+                type='button'
+                onClick={onBoring}
+                className='chain-boring'
+                style={boringLink}
+                aria-label={
+                  boring
+                    ? 'Bring the chain back. Return to the interactive view.'
+                    : "I'm boring. Show the plain text resume instead."
+                }
+              >
                 {boring ? 'Bring the chain back.' : "I'm boring."}
               </button>
-            </>
+            </p>
           )}
         </div>
       )}
@@ -159,6 +209,7 @@ export default function IdentityPanel({
             href={s.href}
             target={s.href.startsWith('http') ? '_blank' : undefined}
             rel={s.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+            className='chain-social'
             style={{ color: palette.amber, textDecoration: 'none' }}
           >
             {s.label} ↗
@@ -184,9 +235,15 @@ export const btnPrimary: CSSProperties = {
   fontWeight: 600,
 };
 
+// The border is the only thing that marks these two out as controls, so it has
+// to clear WCAG 1.4.11's 3:1 for non-text contrast. .25 measured 1.99:1 on the
+// near-black background; .48 is 4.2:1, and still 3.4:1 once boring mode's
+// home-drain filter takes its ~20% off. It reads as a hairline either way.
+const CONTROL_BORDER = '1px solid rgba(236,231,221,.48)';
+
 export const btnOutline: CSSProperties = {
   ...btnBase,
-  border: '1px solid rgba(236,231,221,.25)',
+  border: CONTROL_BORDER,
   color: palette.text,
 };
 
@@ -204,7 +261,7 @@ const boringLink: CSSProperties = {
 const btnGhost: CSSProperties = {
   ...btnBase,
   background: 'none',
-  border: '1px solid rgba(236,231,221,.25)',
+  border: CONTROL_BORDER,
   color: 'rgba(236,231,221,.7)',
   cursor: 'pointer',
   fontFamily: 'inherit',

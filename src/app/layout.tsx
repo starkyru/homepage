@@ -6,6 +6,9 @@ import '@/styles/globals.css';
 // !STARTERCONF This is for demo purposes, remove @/styles/colors.css import immediately
 import '@/styles/colors.css';
 
+import { personLd, websiteLd } from '@/lib/structured-data';
+
+import SiteShell from '@/components/home/SiteShell';
 import Navigation from '@/components/Navigation';
 
 import { siteConfig } from '@/constant/config';
@@ -58,27 +61,10 @@ export const metadata: Metadata = {
   },
 };
 
-// Person structured data → richer search results / knowledge panel.
-const personLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Person',
-  name: siteConfig.title,
-  url: siteConfig.url,
-  jobTitle: siteConfig.tagline,
-  description: siteConfig.description,
-  sameAs: [
-    'https://github.com/starkyru',
-    'https://www.linkedin.com/in/starkyru/',
-  ],
-  knowsAbout: [
-    'React',
-    'React Native',
-    'Vue',
-    'TypeScript',
-    'Node.js',
-    'Next.js',
-  ],
-};
+// Site-wide identity graph, generated from resume.json (see @/lib/structured-
+// data). Pages add their own page-level node — ProfilePage on /, CollectionPage
+// on /projects — and point at this Person by @id rather than repeating it.
+const siteGraph = [personLd(), websiteLd()];
 
 // The whole site now uses the single "hanging chain" palette (dark amber on
 // near-black). `dark` is pinned so existing `dark:` variants render in that
@@ -91,12 +77,19 @@ export default function RootLayout({
   return (
     <html lang='en' className='dark' suppressHydrationWarning>
       <body>
-        <script
-          type='application/ld+json'
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(personLd) }}
-        />
+        {siteGraph.map((node) => (
+          <script
+            key={node['@id']}
+            type='application/ld+json'
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(node) }}
+          />
+        ))}
         <Navigation />
-        {children}
+        {/* / and /projects are one view with two contents: the shell holds the
+            identity panel and the chain across the navigation between them, so
+            the panel never moves and the chain can slide out of the way instead
+            of being torn down. Any other route it passes straight through. */}
+        <SiteShell>{children}</SiteShell>
         <Script
           src='https://stats.ilia.to/script.js'
           data-website-id='9cbf542a-4bc0-40c5-a310-ddce1f02a4e9'

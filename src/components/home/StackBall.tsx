@@ -14,7 +14,9 @@ interface Props {
   initialY: number;
 }
 
-const BALL_R = 18;
+const DISC_R_MAX = 18;
+const DISC_R_MIN = 10;
+const DISC_FILL = 0.5; // share of the ball's area the discs may occupy
 const DISC_GAP = 6; // min clear space between discs so they never look stuck together
 const FRICTION = 0.96; // bleeds off speed so the pile settles
 const GRAVITY = 0.25; // discs settle toward the bottom of the ball
@@ -24,7 +26,20 @@ const SETTLE_FRAMES = 300; // hard cap (~5s) — always come to rest in time
 
 interface Tech {
   label: string;
-  src: string;
+  src: string | null; // null → the label rides as text instead of a logo
+}
+
+/** Short stand-in for technologies with no Simple Icons logo ("REST", "Zu…"). */
+function abbreviate(label: string): string {
+  const words = label.split(/[\s/-]+/).filter(Boolean);
+  if (words.length > 1) {
+    return words
+      .map((w) => w[0])
+      .join('')
+      .slice(0, 3)
+      .toUpperCase();
+  }
+  return label.slice(0, 4);
 }
 
 /**
@@ -41,18 +56,29 @@ export default function StackBall({
   initialX,
   initialY,
 }: Props) {
-  // Unique logos (drops the duplicate React / React Native icon).
+  // One disc per distinct logo (React / React Native share an icon), plus a
+  // text disc for anything with no logo, so nothing is silently dropped.
   const techs = useMemo<Tech[]>(() => {
     const seen = new Set<string>();
     const out: Tech[] = [];
     for (const label of labels) {
       const src = techLogo(label);
-      if (!src || seen.has(src)) continue;
-      seen.add(src);
+      const key = src ?? `label:${label}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
       out.push({ label, src });
     }
     return out;
   }, [labels]);
+
+  // Discs shrink as the stack grows so they keep fitting inside the ball.
+  const discR = useMemo(() => {
+    const cont = r - 22;
+    const ideal = Math.sqrt(
+      (DISC_FILL * cont * cont) / Math.max(1, techs.length),
+    );
+    return Math.max(DISC_R_MIN, Math.min(DISC_R_MAX, Math.round(ideal)));
+  }, [r, techs.length]);
 
   const discRefs = useRef<(HTMLDivElement | null)[]>([]);
   const stateRef = useRef<{
@@ -67,8 +93,8 @@ export default function StackBall({
 
   useEffect(() => {
     const n = techs.length;
-    const cont = r - 22; // inner wall radius (ball centre stays within cont-BALL_R)
-    const spawn = cont - BALL_R;
+    const cont = r - 22; // inner wall radius (disc centres stay within cont-discR)
+    const spawn = cont - discR;
     const x: number[] = [];
     const y: number[] = [];
     const vx: number[] = [];
@@ -86,7 +112,7 @@ export default function StackBall({
     }
     stateRef.current = { x, y, vx, vy };
 
-    const inner = cont - BALL_R;
+    const inner = cont - discR;
     const c0 = world.points[point];
     const track = { cx: c0.x, cy: c0.y, vx: 0, vy: 0 };
     let still = 0;
@@ -143,7 +169,7 @@ export default function StackBall({
         s.vy[i] += GRAVITY;
         // inelastic circular wall: absorb the outward push, add ground friction
         const d = Math.hypot(s.x[i], s.y[i]);
-        if (d + BALL_R > cont && d > 0) {
+        if (d + discR > cont && d > 0) {
           const nx = s.x[i] / d;
           const ny = s.y[i] / d;
           s.x[i] = nx * inner;
@@ -164,7 +190,7 @@ export default function StackBall({
           const dx = s.x[j] - s.x[i];
           const dy = s.y[j] - s.y[i];
           const dist = Math.hypot(dx, dy);
-          const min = BALL_R * 2 + DISC_GAP;
+          const min = discR * 2 + DISC_GAP;
           if (dist < min && dist > 0) {
             const nx = dx / dist;
             const ny = dy / dist;
@@ -190,7 +216,7 @@ export default function StackBall({
         maxSp = Math.max(maxSp, Math.hypot(s.vx[i], s.vy[i]));
         const el = discRefs.current[i];
         if (el)
-          el.style.transform = `translate(${r + s.x[i] - BALL_R}px, ${r + s.y[i] - BALL_R}px)`;
+          el.style.transform = `translate(${r + s.x[i] - discR}px, ${r + s.y[i] - discR}px)`;
       }
 
       // sleep once slow for a while, or force it after the settle window
@@ -212,7 +238,7 @@ export default function StackBall({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     };
-  }, [techs, r, world, point]);
+  }, [techs, r, discR, world, point]);
 
   const sprint = (i: number) => {
     const s = stateRef.current;
@@ -247,7 +273,7 @@ export default function StackBall({
     >
       {techs.map((t, i) => (
         <div
-          key={t.src}
+          key={t.src ?? t.label}
           ref={(el) => {
             discRefs.current[i] = el;
           }}
@@ -258,8 +284,8 @@ export default function StackBall({
           title={t.label}
           style={{
             position: 'absolute',
-            width: BALL_R * 2,
-            height: BALL_R * 2,
+            width: discR * 2,
+            height: discR * 2,
             borderRadius: '50%',
             border: `1px solid ${palette.amber}`,
             background: palette.bg,
@@ -270,14 +296,29 @@ export default function StackBall({
             willChange: 'transform',
           }}
         >
-          <img
-            src={t.src}
-            alt={t.label}
-            title={t.label}
-            width={20}
-            height={20}
-            style={{ display: 'block', pointerEvents: 'none' }}
-          />
+          {t.src ? (
+            <img
+              src={t.src}
+              alt={t.label}
+              title={t.label}
+              width={Math.round(discR * 1.1)}
+              height={Math.round(discR * 1.1)}
+              style={{ display: 'block', pointerEvents: 'none' }}
+            />
+          ) : (
+            <span
+              aria-label={t.label}
+              style={{
+                fontSize: Math.max(7, Math.round(discR * 0.55)),
+                fontWeight: 600,
+                letterSpacing: '.02em',
+                color: palette.amber,
+                pointerEvents: 'none',
+              }}
+            >
+              {abbreviate(t.label)}
+            </span>
+          )}
         </div>
       ))}
     </div>

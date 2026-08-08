@@ -40,6 +40,16 @@ html.dark {
   }
 }
 
+/* On /projects the identity panel stays on screen wherever the desktop chain
+   view mounts, and it carries its own way back — so the floating Back chip,
+   which would sit right on top of it, is only for the plain page. Must mirror
+   the JS gate in SiteShell (reduced motion, MIN_PHYSICS_WIDTH). */
+@media (prefers-reduced-motion: no-preference) and (min-width: 900px) {
+  .projects-back {
+    display: none;
+  }
+}
+
 /* Projects page cards — hover lift on the dark palette. */
 .project-card {
   transition:
@@ -191,4 +201,716 @@ html.dark {
       0 2px,
       100% 2px;
   }
+
+  /*
+   * Homepage CTAs (Projects / Download resume / Reset chain).
+   *
+   * These carry inline styles from IdentityPanel, and inline wins the cascade,
+   * so the interaction states only touch properties set nowhere inline —
+   * transform, box-shadow and filter. Brightening via filter is what stands in
+   * for the background/border/colour changes a normal button would make.
+   */
+  .chain-btn {
+    display: inline-block;
+    cursor: pointer;
+    transform: translateY(0);
+    will-change: transform, box-shadow;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .chain-btn {
+      transition:
+        transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+        filter 0.18s ease;
+    }
+
+    /* The press itself snaps; only the release eases back out. */
+    .chain-btn:active {
+      transition-duration: 0.07s;
+    }
+  }
+
+  .chain-btn:focus-visible {
+    outline: 2px solid rgba(224, 164, 88, 0.9);
+    outline-offset: 3px;
+  }
+
+  /* Hover is gated on a real pointer: two of these live in the mobile header,
+     where a tap would otherwise leave the hover state stuck on. */
+  @media (hover: hover) {
+    /* Amber fill — the shadow is a warm glow in the button's own colour. */
+    .chain-btn--primary:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 8px 20px -4px rgba(224, 164, 88, 0.45),
+        0 3px 8px -2px rgba(0, 0, 0, 0.35);
+      filter: brightness(1.07);
+    }
+
+    /* Outlined on a near-black panel — lift on a dark shadow, and fake the
+       border brightening with a hairline ring, since the border is inline. */
+    .chain-btn--outline:hover,
+    .chain-btn--ghost:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 8px 20px -6px rgba(0, 0, 0, 0.55),
+        0 0 0 1px rgba(236, 231, 221, 0.28),
+        0 0 18px -6px rgba(224, 164, 88, 0.35);
+      filter: brightness(1.18);
+    }
+  }
+
+  /*
+   * Press: the button travels down past its resting position and the drop
+   * shadow all but disappears, so it reads as pushed into the panel rather
+   * than floating above it. Total travel from hover is 5px.
+   */
+  .chain-btn--primary:active {
+    transform: translateY(3px) scale(0.98);
+    box-shadow:
+      0 0 3px -1px rgba(224, 164, 88, 0.25),
+      inset 0 3px 7px rgba(90, 60, 15, 0.45);
+    filter: brightness(0.93);
+  }
+
+  .chain-btn--outline:active,
+  .chain-btn--ghost:active {
+    transform: translateY(3px) scale(0.98);
+    box-shadow:
+      inset 0 3px 8px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(236, 231, 221, 0.16);
+    filter: brightness(0.9);
+  }
+
+  /* Reduced motion keeps the state changes, drops the movement. */
+  @media (prefers-reduced-motion: reduce) {
+    .chain-btn:hover,
+    .chain-btn:active {
+      transform: none;
+    }
+  }
+
+  /*
+   * Social links (GitHub / LinkedIn / Email) in the identity panel.
+   *
+   * The rule is a pseudo-element rather than text-decoration so it can grow
+   * from the centre outwards; scaleX from a centre origin does that in one
+   * compositor-friendly property, where animating width would not.
+   */
+  .chain-social {
+    position: relative;
+    display: inline-block;
+    transform: translateY(0);
+  }
+
+  .chain-social::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -3px;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: center;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .chain-social {
+      /* Slight overshoot on the way up — that's the "pop". */
+      transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .chain-social::after {
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+  }
+
+  .chain-social:focus-visible {
+    outline: 2px solid rgba(224, 164, 88, 0.9);
+    outline-offset: 4px;
+    border-radius: 2px;
+  }
+
+  .chain-social:focus-visible::after {
+    transform: scaleX(1);
+  }
+
+  @media (hover: hover) {
+    .chain-social:hover {
+      transform: translateY(-3px);
+    }
+
+    .chain-social:hover::after {
+      transform: scaleX(1);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .chain-social:hover {
+      transform: none;
+    }
+  }
+
+  /*
+   * "I'm boring" / "Bring the chain back" — the whole homepage drains of
+   * colour, passes through black & white at the midpoint, then settles on a
+   * muted version of the palette. Reversing runs the same path backwards.
+   *
+   * Driven by one filter on <main>. That makes <main> a containing block for
+   * position: fixed descendants — including the chain HUD, which is still on
+   * screen for the first second of the drain while it flies out. Harmless only
+   * because <main> is the first element in <body> at height: 100dvh with
+   * overflow: hidden, so its box *is* the viewport and the two resolve the
+   * same. Render anything above <main> on the home page and the HUD shifts.
+   *
+   * The resting dull palette is held by home-drain's `both` fill, not by this
+   * rule — the class stays on for as long as boring mode does. Handing the
+   * filter back from the animation to a static declaration of the *same* value
+   * still pops: the compositor and the main-thread painter do not produce
+   * identical colour, so the frame where the animation came off read as a
+   * small jump. This rule is the reduced-motion fallback, where the animation
+   * never runs, and the marker `:not(.home-dull)` uses to suppress the hover
+   * preview once boring mode is already on.
+   */
+  .home-dull {
+    filter: saturate(0.35) brightness(0.92) contrast(0.95);
+  }
+
+  /*
+   * Two distinct phases over 2s, not one blended sweep: colour drains to full
+   * black & white by 40%, holds there to 55% so the b/w reads as its own beat,
+   * then the muted palette comes up over the remainder. Reversing mirrors it.
+   *
+   * The full-colour end is `none`, not `saturate(1) brightness(1) contrast(1)`.
+   * Those are the same thing to interpolate against — the spec fills a `none`
+   * list with each function's identity value — but Lightning CSS minifies the
+   * spelled-out identities down to `saturate()brightness()contrast()`, which is
+   * invalid, so the production build silently dropped the whole declaration.
+   */
+  @keyframes home-drain {
+    0% {
+      filter: none;
+    }
+    40% {
+      filter: saturate(0) brightness(0.96) contrast(1.04);
+    }
+    55% {
+      filter: saturate(0) brightness(0.96) contrast(1.04);
+    }
+    100% {
+      filter: saturate(0.35) brightness(0.92) contrast(0.95);
+    }
+  }
+
+  @keyframes home-revive {
+    0% {
+      filter: saturate(0.35) brightness(0.92) contrast(0.95);
+    }
+    40% {
+      filter: saturate(0) brightness(0.96) contrast(1.04);
+    }
+    55% {
+      filter: saturate(0) brightness(0.96) contrast(1.04);
+    }
+    100% {
+      filter: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* The easing applies per segment, so each phase eases in and out of the
+       black & white hold rather than running at a constant rate throughout. */
+    .home-drain {
+      animation: home-drain 2s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+
+    .home-revive {
+      animation: home-revive 2s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+  }
+
+  /*
+   * Chain prev/next arrows (48px circles on desktop, 44px squares on mobile).
+   *
+   * Growth is transform: scale rather than width/height so it costs no layout
+   * and cannot nudge the sibling accordion panel. scale() already works from
+   * the element's centre, but the origin is stated outright because the whole
+   * point of the effect is that the icon stays put while the button grows.
+   *
+   * 1.21 is ~+10px on the 48px desktop button and ~+9px on the 44px mobile one.
+   */
+  .chain-nav {
+    transform: scale(1);
+    transform-origin: center center;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .chain-nav {
+      transition:
+        transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.2s ease;
+    }
+
+    /* The press outruns the spring on the way in, then hands back to it. */
+    .chain-nav:active {
+      transition-duration: 0.08s;
+    }
+  }
+
+  .chain-nav:focus-visible {
+    outline: 2px solid rgba(224, 164, 88, 0.9);
+    outline-offset: 3px;
+  }
+
+  /* Breathing amber glow, plus a ring that expands and fades on each beat. */
+  @keyframes chain-nav-pulse {
+    0%,
+    100% {
+      box-shadow:
+        0 0 10px -2px rgba(224, 164, 88, 0.45),
+        0 0 0 0 rgba(224, 164, 88, 0.35);
+    }
+    50% {
+      box-shadow:
+        0 0 22px 2px rgba(224, 164, 88, 0.8),
+        0 0 0 6px rgba(224, 164, 88, 0);
+    }
+  }
+
+  @media (hover: hover) {
+    .chain-nav:hover {
+      transform: scale(1.21);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .chain-nav:hover {
+        animation: chain-nav-pulse 1.6s ease-in-out infinite;
+      }
+    }
+
+    /* Static glow where the pulse is suppressed. */
+    @media (prefers-reduced-motion: reduce) {
+      .chain-nav:hover {
+        box-shadow: 0 0 16px 0 rgba(224, 164, 88, 0.6);
+      }
+    }
+  }
+
+  /* Shrinks under the finger and springs back out on release — below the
+     resting size, so the dip reads even on a button that isn't hovered. */
+  .chain-nav:active {
+    transform: scale(0.9);
+  }
+
+  @media (hover: hover) {
+    .chain-nav:hover:active {
+      transform: scale(1.05);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .chain-nav:hover,
+    .chain-nav:active {
+      transform: none;
+    }
+  }
+}
+
+/*
+ * "I'm boring" hover preview.
+ *
+ * Deliberately outside @layer utilities: Tailwind tree-shakes that layer against
+ * class names it finds by scanning source, and a :has() rule naming three
+ * classes at once is exactly the shape most likely to be dropped. Plain CSS is
+ * always emitted.
+ *
+ * A transition rather than an animation, so leaving mid-drain eases back from
+ * wherever it got to instead of snapping.
+ *
+ * The curve matters more than the duration here. Linear wastes the first second
+ * — 8% desaturation is invisible, so the effect reads as broken before it reads
+ * as slow. Front-loading it means the colour visibly starts going the moment the
+ * cursor lands, then eases the last of the way into full black & white.
+ *
+ * Scoped with :not(.home-dull) so it does nothing once boring mode is already
+ * on, where the same element is the "Bring the chain back" button.
+ */
+.home-root {
+  transition: filter 1s ease;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .home-root:not(.home-dull):has(.chain-boring:hover) {
+    filter: saturate(0) brightness(0.97) contrast(1.03);
+    transition: filter 4s cubic-bezier(0.25, 0.6, 0.3, 1);
+  }
+}
+
+/* The link itself lifts and warms up — the "pop". */
+.chain-boring {
+  display: inline-block;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .chain-boring {
+    transition:
+      transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+      text-shadow 0.25s ease,
+      filter 0.25s ease;
+  }
+}
+
+@media (hover: hover) {
+  .chain-boring:hover {
+    transform: translateY(-2px);
+    text-shadow: 0 0 12px rgba(224, 164, 88, 0.55);
+    filter: brightness(1.18);
+  }
+}
+
+.chain-boring:focus-visible {
+  outline: 2px solid rgba(224, 164, 88, 0.9);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chain-boring:hover {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+ * Boring-mode crossover: the chain lets go and drops out of frame, the arrows
+ * fly out sideways, the accordion sinks, and the plain resume rises to take
+ * the stage.
+ *
+ * Outside @layer utilities on purpose. Tailwind tree-shakes that layer against
+ * class names it finds by scanning source, and every class here is applied
+ * through a lookup map rather than written into the JSX — the exact shape that
+ * silently dropped the palette-drain rules once already.
+ *
+ * NOTHING HERE MAY ANIMATE A SIMULATED ELEMENT. Card, chip and rope positions
+ * are inline transforms written by the physics rAF loop every frame, and a CSS
+ * animation outranks inline style — it would tear each body away from wherever
+ * Planck put it and snap it back when the class comes off. So the whole stage
+ * falls as a single block, and the one thing animated separately is the rope
+ * layer's opacity, a property the loop never touches on the <svg> itself.
+ *
+ * Durations here are mirrored by TRANSITION_MS in SiteShell.tsx, which
+ * is what keeps both views mounted. Change one, change the other.
+ * ========================================================================== */
+
+/* Gravity: starts at rest, accelerates the whole way out. */
+@keyframes chain-fall-out {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(118vh);
+    opacity: 0;
+  }
+}
+
+/* The ropes go first and fast. That beat is what makes the drop read as the
+   chain being cut loose rather than the scene sliding away. */
+@keyframes chain-ropes-cut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/*
+ * Coming back, the stage carries the scene down from above and stops. It does
+ * not overshoot and rebound any more: the stage holds the anchors, and by the
+ * time it lands SkillChain has already begun dropping the cards and the ball
+ * down their ropes underneath it (see ENTER_DROP_DELAY there). A ceiling that
+ * bounces reads as every strand bouncing at once, right through the middle of
+ * that fall — which is exactly what it looked like.
+ *
+ * So this is the arrival, and the drop that follows is the show. It has to be
+ * over before that drop gets going, which is what sets the 0.6s: 0.25s of delay
+ * then 0.6s of travel puts the landing at 850ms, by which point the loads have
+ * been falling since 700 and are just breaking the top of the frame.
+ *
+ * Per-keyframe curves because the two halves are opposite shapes — the fall
+ * accelerates, the last inch of it decelerates so the stage settles rather than
+ * stopping dead at full speed.
+ *
+ * No opacity here. It starts a full viewport above the stage, so it is already
+ * invisible; fading it in as well would only make it arrive as a ghost.
+ */
+@keyframes chain-fall-in {
+  0% {
+    transform: translateY(-118vh);
+    animation-timing-function: cubic-bezier(0.45, 0, 0.75, 0.45);
+  }
+  88% {
+    transform: translateY(-4vh);
+    animation-timing-function: cubic-bezier(0.3, 0, 0.1, 1);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes chain-nav-out-left {
+  from {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-150px) scale(0.55);
+    opacity: 0;
+  }
+}
+
+@keyframes chain-nav-in-left {
+  from {
+    transform: translateX(-150px) scale(0.55);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes chain-nav-out-right {
+  from {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(150px) scale(0.55);
+    opacity: 0;
+  }
+}
+
+@keyframes chain-nav-in-right {
+  from {
+    transform: translateX(150px) scale(0.55);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* 170%, not 100%: the accordion sits 28px off the bottom edge, so its own
+   height alone does not clear the viewport. */
+@keyframes chain-panel-out {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(170%);
+    opacity: 0;
+  }
+}
+
+@keyframes chain-panel-in {
+  from {
+    transform: translateY(170%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes chain-resume-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes chain-resume-out {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+/*
+ * Page change (/ ↔ /projects): the identity panel stays exactly where it is and
+ * only the chain leaves, sideways, off the right edge. 100% of the stage is the
+ * full width right of the panel, so that clears the frame; the HUD is fixed to
+ * the same box and rides out with it.
+ */
+@keyframes chain-slide-out-right {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes chain-slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/*
+ * Where the chain waits while another page has the stage: still mounted, so the
+ * scene keeps its pose and the scroller its position, but invisible — and
+ * `visibility` (not opacity) because that also takes it out of the tab order and
+ * the accessibility tree, which a chain nobody can see has no business being in.
+ */
+.chain-stage--parked,
+.chain-hud--parked {
+  visibility: hidden;
+  transform: translateX(100%);
+}
+
+/*
+ * The stage keeps its horizontal scrollbar, which would otherwise ride the fall
+ * up and down the screen with it. Hidden by suppressing the bar rather than by
+ * switching overflow to hidden: that keeps the element scrollable, so scrollLeft
+ * survives the trip and the chain comes back to the same place it left.
+ *
+ * Not inside the reduced-motion query — the classes are applied either way.
+ */
+.chain-stage--leaving,
+.chain-stage--entering,
+.chain-stage--sliding-out,
+.chain-stage--sliding-in,
+.chain-stage--parked {
+  scrollbar-width: none;
+}
+
+.chain-stage--leaving::-webkit-scrollbar,
+.chain-stage--entering::-webkit-scrollbar,
+.chain-stage--sliding-out::-webkit-scrollbar,
+.chain-stage--sliding-in::-webkit-scrollbar,
+.chain-stage--parked::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .chain-stage--leaving {
+    animation: chain-fall-out 0.75s cubic-bezier(0.55, 0, 1, 0.45) both;
+  }
+
+  .chain-stage--leaving .chain-ropes {
+    animation: chain-ropes-cut 0.26s ease-out both;
+  }
+
+  /* Held back so the resume is already on its way out before the chain
+     appears over it. */
+  .chain-stage--entering {
+    animation: chain-fall-in 0.6s 0.25s both;
+  }
+
+  .chain-hud--leaving .chain-nav--prev {
+    animation: chain-nav-out-left 0.5s cubic-bezier(0.5, 0, 0.75, 0.3) both;
+  }
+
+  .chain-hud--leaving .chain-nav--next {
+    animation: chain-nav-out-right 0.5s cubic-bezier(0.5, 0, 0.75, 0.3) both;
+  }
+
+  .chain-hud--leaving .chain-panel {
+    animation: chain-panel-out 0.4s cubic-bezier(0.5, 0, 0.75, 0.3) both;
+  }
+
+  /* `both` matters as much for the delay as for the end: backwards fill is
+     what keeps these parked off-stage until their turn comes round. */
+  .chain-hud--entering .chain-nav--prev {
+    animation: chain-nav-in-left 0.5s 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .chain-hud--entering .chain-nav--next {
+    animation: chain-nav-in-right 0.5s 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .chain-hud--entering .chain-panel {
+    animation: chain-panel-in 0.45s 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* The 500ms head start the chain gets before the resume follows it up. */
+  .chain-resume--entering {
+    animation: chain-resume-in 0.7s 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .chain-resume--leaving {
+    animation: chain-resume-out 0.45s cubic-bezier(0.5, 0, 0.75, 0.3) both;
+  }
+
+  .chain-stage--sliding-out,
+  .chain-hud--sliding-out {
+    animation: chain-slide-out-right 0.55s cubic-bezier(0.5, 0, 0.75, 0.3) both;
+  }
+
+  /* Held back a touch so the outgoing column is already dropping away. */
+  .chain-stage--sliding-in,
+  .chain-hud--sliding-in {
+    animation: chain-slide-in-right 0.6s 0.1s cubic-bezier(0.22, 1, 0.36, 1)
+      both;
+  }
+
+  /* The page column rises into the space the chain vacates, on the chain's own
+     heels — same movement as the boring-mode resume, so a page change and a view
+     change read as the same gesture. */
+  .chain-page--entering {
+    animation: chain-resume-in 0.55s 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .chain-page--leaving {
+    animation: chain-resume-out 0.4s cubic-bezier(0.5, 0, 0.75, 0.3) both;
+  }
+}
+
+/*
+ * Unreachable in practice — reduced motion never mounts the physics view at
+ * all — but the phase still runs, so without this the outgoing view would just
+ * sit on top of the incoming one for a second.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .chain-stage--leaving,
+  .chain-hud--leaving,
+  .chain-resume--leaving,
+  .chain-stage--sliding-out,
+  .chain-hud--sliding-out,
+  .chain-page--leaving {
+    display: none;
+  }
+}
+
+/*
+ * Tech chips on the chain (desktop and mobile alike).
+ *
+ * They are div[role=button][tabindex=0] positioned by the simulation, so they
+ * are reachable by keyboard and get the browser's default ring — which is a
+ * dark/light pair tuned for a white page and all but disappears on the amber
+ * disc. This is the same indicator every other control on the page uses, so
+ * tabbing across the chain does not change what "focused" looks like.
+ *
+ * Keyed off the data attribute the physics layer already puts on them rather
+ * than a class name: the chips are addressed by `[data-snap]` everywhere else
+ * too, and a utility-layer class would have to survive Tailwind's tree-shake.
+ */
+[data-snap]:focus-visible {
+  outline: 2px solid rgba(224, 164, 88, 0.9);
+  outline-offset: 3px;
 }

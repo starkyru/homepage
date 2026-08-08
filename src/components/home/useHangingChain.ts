@@ -1,7 +1,16 @@
 import { RefObject, useCallback, useEffect, useRef } from 'react';
 
 import { PANEL_W, type Scene } from './model';
-import { step } from './physics';
+import {
+  breakStick,
+  dragTo,
+  grab,
+  maxSpeed,
+  nudge,
+  release,
+  reset as resetWorld,
+  step,
+} from './physics';
 
 // Round transforms to 0.1px so a settled node produces an identical string
 // frame-to-frame; we then skip rewriting it, which lets the browser's native
@@ -36,6 +45,7 @@ export function useHangingChain(
   active: boolean,
   onSettled?: () => void, // fired once the chain stops swinging (reveal cue)
   onCardClick?: (index: number) => void, // tap (not drag) on an experience card
+  paused = false, // hold the pose (the scene is being animated in by CSS)
 ) {
   const rafRef = useRef<number | null>(null);
   const snappedRef = useRef<Set<string>>(new Set());
@@ -44,19 +54,13 @@ export function useHangingChain(
   onSettledRef.current = onSettled;
   const onCardClickRef = useRef(onCardClick);
   onCardClickRef.current = onCardClick;
+  // Also a ref: pausing must not tear down and rebuild the loop, or the node
+  // list and the settle counter would be rebuilt with it.
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
 
   const reset = useCallback(() => {
-    const { world, rest } = scene;
-    for (let i = 0; i < world.points.length; i++) {
-      const p = world.points[i];
-      const r = rest[i];
-      p.x = r.x;
-      p.y = r.y;
-      p.px = r.x;
-      p.py = r.y;
-      p.held = false;
-    }
-    for (const s of world.sticks) s.broken = false;
+    resetWorld(scene.world); // restores the rest pose and re-welds every chip
     snappedRef.current.clear();
   }, [scene]);
 
@@ -154,9 +158,13 @@ export function useHangingChain(
         const p = world.points[n.point];
         const base = `translate(${r1(p.x - n.w / 2)}px, ${r1(p.y - n.h / 2)}px)`;
         let tf: string;
-        if (n.chip && !snapped.has(n.id)) {
-          const f = frames.get(n.cardPv);
-          tf = f ? `${base} rotate(${r1(f.deg)}deg)` : base;
+        if (n.chip) {
+          // Bolted on, a chip spins with its card; cut loose it tumbles and
+          // rolls on its own, so take the angle straight off its body.
+          const deg = snapped.has(n.id)
+            ? (p.body.getAngle() * 180) / Math.PI
+            : frames.get(n.cardPv)?.deg;
+          tf = deg === undefined ? base : `${base} rotate(${r1(deg)}deg)`;
         } else {
           tf = base;
         }
@@ -199,10 +207,10 @@ export function useHangingChain(
     };
 
     // Scrolling the (parent) container imparts inertia: the hanging masses lag
-    // behind the anchors when the scroll speed changes, so they swing. The kick
-    // is scaled by each point's inverse mass (im), so a heavier body — a bigger
-    // card, whose corners carry more mass — gets a smaller velocity change and
-    // swings less than a small, light one.
+    // behind the anchors when the scroll speed changes, so they swing. What each
+    // body then does with that kick is the physics' business — a heavy card
+    // swings less than a light chip because it is heavier, not because the kick
+    // was scaled down for it.
     const scroller = stage.parentElement;
     let prevScroll = scroller?.scrollLeft ?? 0;
     let prevVel = 0;
@@ -214,32 +222,20 @@ export function useHangingChain(
       prevScroll = sl;
       prevVel = vel;
       if (Math.abs(acc) < 0.05) return;
-      const k = 0.16;
-      for (const p of world.points) {
-        if (p.pinned || p.held) continue;
-        p.px += acc * k * p.im; // heavier point (smaller im) → smaller kick → more inertia
-      }
+      nudge(world, -acc * 0.16, 0);
     };
 
     // Reveal cue: the initial drop swings the cards to equilibrium; watch the
-    // fastest node and fire once it's crawled for a few frames (or after a hard
-    // cap, so we always reveal). Verlet velocity = current − previous position.
+    // fastest body and fire once it's crawled for a few frames (or after a hard
+    // cap, so we always reveal).
     let settleFrames = 0;
     let frameCount = 0;
     let settledFired = false;
     const checkSettled = () => {
       if (settledFired) return;
       frameCount++;
-      let maxV = 0;
-      for (const p of world.points) {
-        if (p.pinned) continue;
-        const dx = p.x - p.px;
-        const dy = p.y - p.py;
-        const v = dx * dx + dy * dy;
-        if (v > maxV) maxV = v;
-      }
-      if (maxV < 0.12)
-        settleFrames++; // < ~0.35px/step
+      if (maxSpeed(world) < 0.35)
+        settleFrames++; // px/frame
       else settleFrames = 0;
       if (settleFrames >= 5 || frameCount >= 200) {
         settledFired = true;
@@ -247,10 +243,17 @@ export function useHangingChain(
       }
     };
 
+    // Paused freezes time itself — no gravity, no solver, so a scene held off
+    // plumb stays exactly where it was put. `render` still runs, since the
+    // element is being moved by CSS underneath it, and so does the settle check,
+    // which a held (and therefore motionless) scene passes at once — that is
+    // what reveals the stage in time for it to drop in.
     const loop = () => {
-      edgeScroll();
-      applyScrollInertia();
-      step(world, 20); // extra iterations keep the rigid triangles stiff
+      if (!pausedRef.current) {
+        edgeScroll();
+        applyScrollInertia();
+        step(world);
+      }
       render();
       checkSettled();
       rafRef.current = requestAnimationFrame(loop);
@@ -263,7 +266,6 @@ export function useHangingChain(
     };
 
     let dragPoint = -1;
-    let dragOff = { x: 0, y: 0 };
     let dragClient = { x: 0, y: 0 }; // last pointer position (viewport coords)
     let dragStart = { x: 0, y: 0 }; // press position, to tell a tap from a drag
     let pressCardIdx = -1; // experience index of the pressed card (tap → open)
@@ -286,13 +288,9 @@ export function useHangingChain(
       const next = Math.max(0, Math.min(max, scroller.scrollLeft + dx));
       if (next === scroller.scrollLeft) return; // already at the end
       scroller.scrollLeft = next;
-      // re-pin the dragged card to the cursor now that the content shifted
+      // re-aim the drag at the cursor now that the content shifted under it
       const rect = stage.getBoundingClientRect();
-      const p = world.points[dragPoint];
-      p.px = p.x; // carry the motion as velocity → natural release
-      p.py = p.y;
-      p.x = dragClient.x - rect.left - dragOff.x;
-      p.y = dragClient.y - rect.top - dragOff.y;
+      dragTo(world, dragClient.x - rect.left, dragClient.y - rect.top);
     };
 
     const snap = (id: string) => {
@@ -300,7 +298,7 @@ export function useHangingChain(
       const sticks = chipSticksById.get(id);
       if (!sticks) return;
       snapped.add(id);
-      for (const s of sticks) world.sticks[s].broken = true; // cut all links → it drops
+      for (const s of sticks) breakStick(world, s); // cut the weld → it drops
     };
 
     const onDown = (e: PointerEvent) => {
@@ -312,10 +310,8 @@ export function useHangingChain(
         pressCardIdx = Number(cardEl.dataset.card);
         dragStart = { x: e.clientX, y: e.clientY };
         const l = local(e);
-        const p = world.points[dragPoint];
-        dragOff = { x: l.x - p.x, y: l.y - p.y };
         dragClient = { x: e.clientX, y: e.clientY };
-        p.held = true;
+        grab(world, dragPoint, l.x, l.y); // anchors the body under the cursor
         e.preventDefault();
         return;
       }
@@ -330,16 +326,12 @@ export function useHangingChain(
       if (dragPoint < 0) return;
       dragClient = { x: e.clientX, y: e.clientY };
       const l = local(e);
-      const p = world.points[dragPoint];
-      p.px = p.x;
-      p.py = p.y;
-      p.x = l.x - dragOff.x;
-      p.y = l.y - dragOff.y;
+      dragTo(world, l.x, l.y);
     };
 
     const onUp = (e: PointerEvent) => {
       if (dragPoint >= 0) {
-        world.points[dragPoint].held = false;
+        release(world); // lets go carrying whatever momentum it built up
         dragPoint = -1;
         // A tap (barely moved) on an experience card opens its accordion.
         const moved = Math.hypot(
@@ -378,6 +370,7 @@ export function useHangingChain(
     return () => {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
+      release(world); // never leave a drag joint behind on unmount
       stage.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);

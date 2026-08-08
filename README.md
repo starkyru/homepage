@@ -11,7 +11,7 @@ Senior Software Engineer with 20+ years of experience specializing in Vue, React
 
 ## About This Project
 
-ilia.to - Personal portfolio site built with Next.js App Router and React 19. Features an interactive resume synced with Google Docs and rendered from HTML source, with email obfuscation, phone linkification, and a floating PDF download. CI/CD pipeline with GitHub Actions, Husky pre-commit hooks, and automated linting/typechecking/testing.
+ilia.to - Personal portfolio site built with Next.js App Router and React 19. The homepage is an interactive hanging-chain scene simulated with [Planck](https://piqnt.com/planck.js) (a JavaScript port of Box2D): experience cards are rigid bodies swinging from jointed ropes, technology chips are welded to their borders and can be snapped off to fall and pile up, and everything can be dragged, shoved into its neighbours and reset. Its content is generated from a Google Docs resume: `pnpm update:resume` parses the doc export into `src/data/resume.json`, which drives the experience cards, the technology stack ball, and the intro copy. A floating PDF download links straight to the same doc. CI/CD pipeline with GitHub Actions, Husky pre-commit hooks, and automated linting/typechecking/testing.
 
 The site includes a day/night mode switcher with hand-crafted canvas animations — an animated sun with rotating rays and grain noise in day mode, and an animated crescent moon with twinkling stars and pulsing wave rings at night. Both celestial bodies respond to hover with scaling and speed changes, and the transition between modes is fully animated with eased color interpolation.
 

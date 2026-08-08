@@ -10,16 +10,141 @@ import {
 import { FiChevronLeft, FiChevronRight, FiChevronUp } from 'react-icons/fi';
 
 import type { Scene } from './model';
-import { EXPERIENCE, palette, PANEL_W, techLogo } from './model';
+import { ANCHOR_Y, EXPERIENCE, palette, PANEL_W, techLogo } from './model';
+import { dropFrom, lean, payOut } from './physics';
 import SkillChainStackBall from './StackBall';
 import { useHangingChain } from './useHangingChain';
+
+/** Where the chain sits in the boring-mode transition. `in` is the settled,
+ *  interactive chain; the other two are the drop-out / drop-in animations. */
+export type ChainView = 'in' | 'leaving' | 'entering';
+
+// Spelled out rather than built as `chain-stage--${view}`: these rules live in
+// globals.css and Tailwind cannot see through a template literal when it decides
+// what to keep. (They sit outside @layer utilities too, so this is belt and
+// braces — but the same trap already bit the palette-drain classes once.)
+const STAGE_CLASS: Record<ChainView, string> = {
+  in: 'chain-stage',
+  leaving: 'chain-stage chain-stage--leaving',
+  entering: 'chain-stage chain-stage--entering',
+};
+
+const HUD_CLASS: Record<ChainView, string> = {
+  in: 'chain-hud',
+  leaving: 'chain-hud chain-hud--leaving',
+  entering: 'chain-hud chain-hud--entering',
+};
+
+/** The page change (see SiteShell): the whole chain — stage and HUD together —
+ *  slides off to the right and comes back the same way. Layered on top of the
+ *  boring-mode `view`, which stays `in` throughout, so the two never share a
+ *  class name and cannot fight over one `animation` property. */
+const SLIDE_STAGE = {
+  out: ' chain-stage--sliding-out',
+  in: ' chain-stage--sliding-in',
+} as const;
+
+const SLIDE_HUD = {
+  out: ' chain-hud--sliding-out',
+  in: ' chain-hud--sliding-in',
+} as const;
+
+// How far off plumb a strand may be held while it drops in. Small enough to read
+// as a card hanging a little askew rather than as a deliberate shove.
+const ENTER_LEAN = (9 * Math.PI) / 180;
+
+/**
+ * The tilt strand `i` is dropped at — signed, so cards land leaning both ways
+ * and swing back through vertical from opposite sides, and never less than 45%
+ * of full, since a strand dropped near plumb has nothing to swing back from.
+ *
+ * Deterministic in the index: the drop-in effect re-runs whenever the scene is
+ * rebuilt, and a chain that leaned a different way each time would jump.
+ */
+function strandLean(i: number): number {
+  // Seeded to give this many strands a fair mix of both signs — the obvious
+  // 127.1 the scene layout uses comes out five-to-two one way.
+  const h = Math.sin((i + 1) * 12.9898) * 43758.5453;
+  const s = (h - Math.floor(h)) * 2 - 1; // -1 … 1
+  return (s < 0 ? -1 : 1) * (0.45 + Math.abs(s) * 0.55) * ENTER_LEAN;
+}
+
+/**
+ * The loads' own fall, in ms from the moment the chain view mounts.
+ *
+ * This is the entrance you actually watch; the stage's drop (0.25s delay + 0.6s,
+ * per .chain-stage--entering) is only how the scene gets there. The stage must
+ * be *finished* by the time this is under way, because anything it does
+ * afterwards moves every anchor at once and shows up as the whole chain
+ * twitching mid-fall.
+ *
+ * The delay is set so the loads break the top of the frame just as the stage
+ * settles at 850ms. They start out of sight (`Strand.clear`) and an accelerating
+ * fall is slow to begin with, so the first ~180ms of it is spent off-frame;
+ * starting them at 700 spends that against the stage's own last moments instead
+ * of against an empty stage.
+ */
+const ENTER_DROP_DELAY = 700;
+const ENTER_DROP_TIME = 600;
+
+/** When the simulation gets the chain back — the instant the last rope goes
+ *  taut. Let go earlier and the swing is spent before the load has landed.
+ *  SiteShell's TRANSITION_MS['to-chain'] must outlast this. */
+const ENTER_DROP_MS = ENTER_DROP_DELAY + ENTER_DROP_TIME;
+
+/**
+ * A load falling on a rope: gravity all the way down, past the end of the rope,
+ * then hauled back as the rope goes taut.
+ *
+ * `OVER` is how far past its own length a rope gives, so 1.18 is an 18% stretch
+ * — well inside the 120% its stretch cap allows (ROPE_MAX_STRETCH), and every
+ * strand gives the same fraction of its own length rather than of its trip. It
+ * returns without oscillating, like the rope itself: the ropes are critically
+ * damped, and it is the swing that follows, not this, that carries the energy
+ * off.
+ */
+function dropEase(u: number): number {
+  const OVER = 1.18;
+  const CATCH = 0.85; // where the rope stops the fall
+  if (u < CATCH) {
+    const k = u / CATCH;
+    return OVER * k * k;
+  }
+  const k = (u - CATCH) / (1 - CATCH);
+  return OVER + (1 - OVER) * (1 - (1 - k) * (1 - k));
+}
 
 interface Props {
   scene: Scene;
   registerReset: (fn: () => void) => void;
+  view?: ChainView;
+  /** Page change: 'out' as another page takes the stage, 'in' coming back. */
+  slide?: 'out' | 'in';
+  /**
+   * Parked off-stage while another page is up. The simulation is torn down —
+   * nothing is moving and nobody can see it — but the scroller stays mounted, so
+   * the scene keeps its pose and its scroll position and the chain comes back to
+   * exactly where it was left, with no rebuild.
+   */
+  parked?: boolean;
 }
 
-export default function SkillChain({ scene, registerReset }: Props) {
+export default function SkillChain({
+  scene,
+  registerReset,
+  view = 'in',
+  slide,
+  parked = false,
+}: Props) {
+  // Mid-transition the chain is still mounted but must not take input: the
+  // resume is sliding over it, and the HUD children set pointerEvents inline,
+  // which no stylesheet rule can outrank. The same holds while it is sliding to
+  // or from another page, and while it sits parked there.
+  const busy = view !== 'in' || slide !== undefined || parked;
+  const hit = busy ? ('none' as const) : ('auto' as const);
+  // While the chain is dropping in, the simulation is held off plumb so the
+  // cards arrive leaning; releasing it at the bottom is what makes them swing.
+  const [held, setHeld] = useState(view === 'entering');
   const scrollRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const indexRef = useRef(0);
@@ -30,11 +155,62 @@ export default function SkillChain({ scene, registerReset }: Props) {
   const { reset } = useHangingChain(
     stageRef,
     scene,
-    true,
+    !parked,
     () => setReady(true),
     (i) => openCardRef.current(i),
+    held,
   );
   const P = (i: number) => scene.world.points[i];
+
+  // Pull the chain aside, freeze it there, and drop it. The simulation is held
+  // for the whole entrance — every pose in it is placed, not solved — and this
+  // timer is the hand-off: at the end the loads are exactly where the scene was
+  // built to hold them, leaning, and the solver takes over and swings them.
+  //
+  // The anchors never move. The cards and the ball start gathered right up at
+  // them with no rope showing and fall away on their own clock, well after the
+  // stage carrying them has landed, so the ropes are seen coming out of a
+  // ceiling fixed at the top of the frame rather than arriving with the card.
+  useEffect(() => {
+    if (view !== 'entering') {
+      setHeld(false);
+      return;
+    }
+    const { world, strands } = scene;
+    setHeld(true);
+    lean(
+      world,
+      strands,
+      strands.map((_, i) => strandLean(i)),
+      ANCHOR_Y,
+    );
+    const drop = dropFrom(world, strands); // the pose the loads come home to
+    let raf = 0;
+    let falling = true;
+    const land = () => {
+      if (!falling) return;
+      falling = false;
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      payOut(world, drop, 1); // ropes taut, loads home
+    };
+    const start = performance.now();
+    const tick = () => {
+      const u =
+        (performance.now() - start - ENTER_DROP_DELAY) / ENTER_DROP_TIME;
+      payOut(world, drop, dropEase(Math.max(0, Math.min(1, u))));
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+    const timer = window.setTimeout(() => {
+      land();
+      setHeld(false);
+    }, ENTER_DROP_MS);
+    return () => {
+      window.clearTimeout(timer);
+      land(); // an interrupted drop must never leave a load off its rope
+    };
+  }, [view, scene]);
 
   useEffect(() => {
     registerReset(reset);
@@ -136,6 +312,27 @@ export default function SkillChain({ scene, registerReset }: Props) {
     },
     [expanded, scene, scrollToLeft],
   );
+
+  // ← / → step through the roles exactly like the on-screen arrows. Skipped
+  // while a chip has focus (Enter/Space snaps it off, arrows should still nav)
+  // only if a modifier is held or focus sits in a text field.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      if (busy) return; // the chain is on its way out (or in) — don't scroll it
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (
+        t?.isContentEditable ||
+        /^(INPUT|TEXTAREA|SELECT)$/.test(t?.tagName ?? '')
+      )
+        return;
+      e.preventDefault();
+      go(e.key === 'ArrowRight' ? 1 : -1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [go, busy]);
 
   // --- centred-job accordion (between the arrows) --------------------------
   // `centered` = the experience nearest the viewport centre; `shownJob` is the
@@ -244,13 +441,18 @@ export default function SkillChain({ scene, registerReset }: Props) {
     <>
       <div
         ref={scrollRef}
-        className='chain-scroll'
+        className={
+          STAGE_CLASS[view] +
+          (slide ? SLIDE_STAGE[slide] : '') +
+          (parked ? ' chain-stage--parked' : '')
+        }
         style={{
           position: 'absolute',
           inset: 0,
           overflowX: 'auto',
           overflowY: 'hidden',
           overscrollBehavior: 'contain',
+          pointerEvents: hit,
           zIndex: 1,
         }}
       >
@@ -269,6 +471,7 @@ export default function SkillChain({ scene, registerReset }: Props) {
           {/* rope lines + the short rigid rods bolting each chip to its card */}
           <svg
             data-phys='1'
+            className='chain-ropes'
             width={scene.world.w}
             height={scene.world.h}
             style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
@@ -363,7 +566,7 @@ export default function SkillChain({ scene, registerReset }: Props) {
                 <div
                   style={{
                     fontSize: 11.5,
-                    color: 'rgba(236,231,221,.5)',
+                    color: 'rgba(236,231,221,.6)',
                     marginTop: 2,
                   }}
                 >
@@ -435,6 +638,11 @@ export default function SkillChain({ scene, registerReset }: Props) {
 
       {/* prev / next + the centred-job accordion panel between them */}
       <div
+        className={
+          HUD_CLASS[view] +
+          (slide ? SLIDE_HUD[slide] : '') +
+          (parked ? ' chain-hud--parked' : '')
+        }
         style={{
           position: 'fixed',
           left: PANEL_W,
@@ -452,14 +660,16 @@ export default function SkillChain({ scene, registerReset }: Props) {
           type='button'
           aria-label='Previous role'
           onClick={() => go(-1)}
-          style={navBtn}
+          className='chain-nav chain-nav--prev'
+          style={{ ...navBtn, pointerEvents: hit }}
         >
           <FiChevronLeft size={22} />
         </button>
 
         <div
+          className='chain-panel'
           style={{
-            pointerEvents: 'auto',
+            pointerEvents: hit,
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'flex-end',
@@ -555,7 +765,7 @@ export default function SkillChain({ scene, registerReset }: Props) {
               <div
                 style={{
                   fontSize: 11.5,
-                  color: 'rgba(236,231,221,.5)',
+                  color: 'rgba(236,231,221,.6)',
                   marginTop: 2,
                 }}
               >
@@ -580,7 +790,8 @@ export default function SkillChain({ scene, registerReset }: Props) {
           type='button'
           aria-label='Next role'
           onClick={() => go(1)}
-          style={navBtn}
+          className='chain-nav chain-nav--next'
+          style={{ ...navBtn, pointerEvents: hit }}
         >
           <FiChevronRight size={22} />
         </button>
