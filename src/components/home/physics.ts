@@ -52,10 +52,13 @@ const CAT_PHANTOM = 0x0001;
 const CAT_CHIP = 0x0002;
 const CAT_GROUND = 0x0004;
 const CAT_BODY = 0x0008;
-// Screen-fixed chrome (nav buttons, the accordion). Only chips collide with it:
-// a card swinging into the panel, or a whole mobile strand shouldered aside by
-// it on every scroll, is not a thing anyone asked for.
+// Screen-fixed chrome (nav buttons, the accordion).
 const CAT_HUD = 0x0010;
+// A chip that has been snapped off, as opposed to everything else wearing
+// CAT_CHIP — the stack ball wears it too. Only these land on the chrome: the
+// accordion opening is not allowed to shoulder the big ball out of the way, nor
+// a card, nor a whole mobile strand on every scroll.
+const CAT_LOOSE = 0x0020;
 
 // How far a soft rope may be stretched before it goes taut. Without a ceiling a
 // sustained drag keeps winning against the spring and the rope reads as elastic.
@@ -65,6 +68,11 @@ const ROPE_MAX_STRETCH = 2.2;
 const FALL_DAMPING = 0.4;
 const CHIP_MASK = CAT_CHIP | CAT_GROUND | CAT_BODY | CAT_HUD;
 const BODY_MASK = CAT_BODY | CAT_CHIP | CAT_GROUND;
+// What a chip lying around collides with. Pointedly not CAT_CHIP, which is also
+// what the stack ball wears: the accordion opening under a pile of chips lifts
+// them, and if they could lean on the ball it would shove the whole chain about.
+// Rockets are the exception and re-add it — see `launch`.
+const LOOSE_MASK = CAT_LOOSE | CAT_GROUND | CAT_BODY | CAT_HUD;
 
 /** A named spot on a body, reported in stage pixels. Refreshed by `sync()`. */
 export interface Point {
@@ -671,12 +679,13 @@ export function breakStick(world: World, index: number): void {
   // longer part of any chain, so it gets to fall properly.
   chip.body.setLinearDamping(FALL_DAMPING);
   chip.body.setAngularDamping(FALL_DAMPING);
-  // It also has to start colliding with the floor now that it is falling.
+  // It also has to start colliding with the floor now that it is falling, and
+  // with the chrome, which only cut-loose chips are allowed to land on.
   for (let f = chip.body.getFixtureList(); f; f = f.getNext()) {
     f.setFilterData({
       groupIndex: 0,
-      categoryBits: CAT_CHIP,
-      maskBits: CHIP_MASK,
+      categoryBits: CAT_CHIP | CAT_LOOSE,
+      maskBits: LOOSE_MASK,
     });
   }
   chip.body.setAwake(true);
@@ -758,7 +767,7 @@ export function moveSolid(
       friction: 0.6,
       restitution: 0.05, // chips settle on the panel, they don't bounce off it
       filterCategoryBits: CAT_HUD,
-      filterMaskBits: CAT_CHIP,
+      filterMaskBits: CAT_LOOSE,
     });
   }
 
@@ -837,8 +846,9 @@ export function launch(world: World, point: number): void {
   for (let f = b.getFixtureList(); f; f = f.getNext()) {
     f.setFilterData({
       groupIndex: 0,
-      categoryBits: CAT_CHIP,
-      maskBits: CAT_CHIP,
+      categoryBits: CAT_CHIP | CAT_LOOSE,
+      // Balls only — the big one included, which a rocket is welcome to shove.
+      maskBits: CAT_CHIP | CAT_LOOSE,
     });
   }
   b.setAwake(true);
@@ -901,8 +911,8 @@ export function abortLaunch(world: World, point: number): void {
   for (let f = b.getFixtureList(); f; f = f.getNext()) {
     f.setFilterData({
       groupIndex: 0,
-      categoryBits: CAT_CHIP,
-      maskBits: CHIP_MASK,
+      categoryBits: CAT_CHIP | CAT_LOOSE,
+      maskBits: LOOSE_MASK,
     });
   }
   b.setAwake(true);

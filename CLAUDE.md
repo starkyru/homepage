@@ -165,8 +165,12 @@ off-screen, or it is an invisible shelf lying across the floor.
   contact every frame, and a contact that never survives a step never pushes
   anything anywhere. Thin is safe: Box2D runs continuous collision for dynamic
   against non-dynamic.
-- **Only chips collide with it.** A card swinging into the panel, or a mobile
-  strand shouldered aside by it on every scroll, is not what anyone asked for.
+- **Only chips that have been snapped off collide with it** — `CAT_LOOSE`, not
+  `CAT_CHIP`, which the stack ball wears too. Opening the accordion is allowed to
+  move what is lying on it and nothing else, so a resting chip does not lean on
+  the ball either (a rocket still may; see `launch`). A card swinging into the
+  panel, or a mobile strand shouldered aside on every scroll, is not what anyone
+  asked for.
 - The chains only sync it once something has been snapped off. Measuring an
   element costs a layout read, and with nothing loose nothing can be resting on
   it anyway.
