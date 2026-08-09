@@ -679,6 +679,7 @@ export default function SkillChain({
           aria-label='Previous role'
           onClick={() => go(-1)}
           className='chain-nav chain-nav--prev'
+          data-solid='circle'
           style={{ ...navBtn, pointerEvents: hit }}
         >
           <FiChevronLeft size={22} />
@@ -686,6 +687,10 @@ export default function SkillChain({
 
         <div
           className='chain-panel'
+          // Solid while it is up: a chip snapped off a card lands on the panel
+          // and stays there. Off while it is parked below the frame, or it
+          // would be an invisible shelf lying across the floor.
+          data-solid={panelUp ? 'box' : 'off'}
           style={{
             pointerEvents: hit,
             display: 'flex',
@@ -808,6 +813,7 @@ export default function SkillChain({
           type='button'
           aria-label='Next role'
           onClick={() => go(1)}
+          data-solid='circle'
           className='chain-nav chain-nav--next'
           style={{ ...navBtn, pointerEvents: hit }}
         >

@@ -16,6 +16,7 @@ import {
   Box,
   Circle,
   DistanceJoint,
+  type Fixture,
   type Joint,
   MouseJoint,
   RevoluteJoint,
@@ -51,6 +52,10 @@ const CAT_PHANTOM = 0x0001;
 const CAT_CHIP = 0x0002;
 const CAT_GROUND = 0x0004;
 const CAT_BODY = 0x0008;
+// Screen-fixed chrome (nav buttons, the accordion). Only chips collide with it:
+// a card swinging into the panel, or a whole mobile strand shouldered aside by
+// it on every scroll, is not a thing anyone asked for.
+const CAT_HUD = 0x0010;
 
 // How far a soft rope may be stretched before it goes taut. Without a ceiling a
 // sustained drag keeps winning against the spring and the rope reads as elastic.
@@ -58,7 +63,7 @@ const ROPE_MAX_STRETCH = 2.2;
 
 // Near-free-fall for anything that has been cut loose.
 const FALL_DAMPING = 0.4;
-const CHIP_MASK = CAT_CHIP | CAT_GROUND | CAT_BODY;
+const CHIP_MASK = CAT_CHIP | CAT_GROUND | CAT_BODY | CAT_HUD;
 const BODY_MASK = CAT_BODY | CAT_CHIP | CAT_GROUND;
 
 /** A named spot on a body, reported in stage pixels. Refreshed by `sync()`. */
@@ -677,6 +682,134 @@ export function breakStick(world: World, index: number): void {
   chip.body.setAwake(true);
 }
 
+// --- solid chrome ------------------------------------------------------------
+
+/**
+ * A piece of screen-fixed chrome made solid, so snapped-off chips land on it
+ * instead of dropping through: a nav button, the accordion panel.
+ *
+ * **Kinematic, driven by velocity** — not static and teleported. A teleported
+ * body carries nothing: the panel would slide out from under a chip lying on it
+ * on every scroll, and rise straight through one when the accordion opens. Given
+ * a velocity instead, Box2D solves it as the moving platform it is, so friction
+ * drags a resting chip sideways and the opening panel lifts it.
+ *
+ * **A shelf, not a slab of the whole element.** Only the top edge can be landed
+ * on, and a fixed thickness means the fixture is built once and kept: rebuilding
+ * it as the accordion animates would destroy the contact every frame, and a
+ * contact that never survives a step never pushes anything anywhere. (Tunnelling
+ * is not the risk it looks like — Box2D runs continuous collision for dynamic
+ * against non-dynamic, so a fast chip cannot pass through a thin shelf.)
+ *
+ * These are deliberately kept out of `world.bodies`. That array is the scene,
+ * indexed in step with `world.rest`, and chrome is not part of the scene.
+ */
+export interface Solid {
+  body: Body;
+  fixture: Fixture | null;
+  circle: boolean;
+  w: number; // px of the fixture as last built
+  h: number;
+}
+
+/** How deep the landing surface of a box is. Chips rest on its top face. */
+const SHELF = 20;
+/** Past this, the element did not move — it was re-laid-out. Teleport instead. */
+const JUMP = 200;
+
+export function addSolid(world: World, circle: boolean): Solid {
+  return {
+    body: world.pl.createBody({ type: 'kinematic', position: new Vec2(0, 0) }),
+    fixture: null,
+    circle,
+    w: 0,
+    h: 0,
+  };
+}
+
+/**
+ * Puts the solid where its element now is — the element's centre and size in
+ * stage px — and returns whether it actually moved, which is the caller's cue to
+ * wake whatever may be resting on it.
+ *
+ * A box becomes a shelf across the element's top edge; a circle stays a circle.
+ */
+export function moveSolid(
+  s: Solid,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): boolean {
+  const deep = s.circle ? h : Math.min(h, SHELF);
+  // A box is anchored to the top edge, so growing downward (or upward, which is
+  // how the accordion grows) moves the shelf rather than resizing it.
+  const cy = s.circle ? y : y - h / 2 + deep / 2;
+  // Width changes are real layout changes and rare; depth is fixed by SHELF.
+  const resized = Math.abs(w - s.w) > 2 || Math.abs(deep - s.h) > 2;
+  if (resized) {
+    if (s.fixture) s.body.destroyFixture(s.fixture);
+    s.w = w;
+    s.h = deep;
+    s.fixture = s.body.createFixture({
+      shape: s.circle
+        ? new Circle(m(Math.min(w, deep) / 2))
+        : new Box(m(w) / 2, m(deep) / 2),
+      friction: 0.6,
+      restitution: 0.05, // chips settle on the panel, they don't bounce off it
+      filterCategoryBits: CAT_HUD,
+      filterMaskBits: CAT_CHIP,
+    });
+  }
+
+  if (!s.body.isActive()) {
+    s.body.setActive(true);
+    s.body.setTransform(new Vec2(m(x), m(cy)), 0);
+    s.body.setLinearVelocity(new Vec2(0, 0));
+    return true;
+  }
+
+  const at = s.body.getPosition();
+  const dx = m(x) - at.x;
+  const dy = m(cy) - at.y;
+  const moved = Math.abs(dx) > 0.005 || Math.abs(dy) > 0.005;
+  if (Math.abs(dx) > m(JUMP) || Math.abs(dy) > m(JUMP)) {
+    s.body.setTransform(new Vec2(m(x), m(cy)), 0);
+    s.body.setLinearVelocity(new Vec2(0, 0));
+  } else if (moved) {
+    // Exactly the velocity that lands on the target after one step, so the shelf
+    // tracks its element to the pixel and still pushes like a moving platform.
+    s.body.setLinearVelocity(new Vec2(dx / DT, dy / DT));
+    s.body.setAwake(true);
+  } else {
+    s.body.setLinearVelocity(new Vec2(0, 0));
+  }
+  return moved || resized;
+}
+
+/** Its element is hidden or gone — stop colliding with it. */
+export function idleSolid(s: Solid): void {
+  if (!s.body.isActive()) return;
+  s.body.setLinearVelocity(new Vec2(0, 0));
+  s.body.setActive(false);
+}
+
+export function destroySolid(world: World, s: Solid): void {
+  world.pl.destroyBody(s.body);
+}
+
+/**
+ * Wakes everything that has been cut loose. Its free-fall damping is what marks
+ * it: a chip resting on a panel that just moved has to be re-solved, and a
+ * sleeping body would simply be left standing in mid-air.
+ */
+export function wakeLoose(world: World): void {
+  for (const b of world.bodies) {
+    if (b.isDynamic() && b.getLinearDamping() === FALL_DAMPING)
+      b.setAwake(true);
+  }
+}
+
 // --- launching ---------------------------------------------------------------
 
 /** Upward thrust as a multiple of gravity, so the rise reads like the fall. */
@@ -689,9 +822,11 @@ const LAUNCH_SPIN = 7; // rad/s tumble on the way up
  * than an impulse: the ask is a rocket, and a rocket accelerates the whole way
  * up instead of coasting off one kick.
  *
- * It also stops colliding. A chip under thrust punching through a hanging card
- * would knock the entire chain about, and a firework that shoulders the scenery
- * aside on the way past reads as a bug rather than as a firework.
+ * On the way up it collides with other chips and with nothing else. Two of them
+ * launched together knock each other out of the sky, and one climbing into a
+ * chip lying on the panel scatters it — but a chip under thrust punching through
+ * a hanging card would knock the entire chain about, and a firework that
+ * shoulders the scenery aside on the way past reads as a bug, not a firework.
  */
 export function launch(world: World, point: number): void {
   const b = world.points[point].body;
@@ -703,7 +838,71 @@ export function launch(world: World, point: number): void {
     f.setFilterData({
       groupIndex: 0,
       categoryBits: CAT_CHIP,
-      maskBits: 0,
+      maskBits: CAT_CHIP,
+    });
+  }
+  b.setAwake(true);
+}
+
+/**
+ * Whatever a body is in contact with. Opaque to callers — it exists only to be
+ * handed back to `struck`, which is what keeps the engine's own types in here.
+ */
+export type Contacts = Set<Body>;
+
+/** Everything a body is touching right now. */
+export function touching(world: World, point: number): Contacts {
+  const b = world.points[point].body;
+  const out: Contacts = new Set();
+  for (let ce = b.getContactList(); ce; ce = ce.next) {
+    if (ce.contact?.isTouching() && ce.other) out.add(ce.other);
+  }
+  return out;
+}
+
+/** A card, a box or another chip — as opposed to the ground or the chrome. */
+function isScenery(b: Body): boolean {
+  for (let f = b.getFixtureList(); f; f = f.getNext()) {
+    if (f.getFilterCategoryBits() & (CAT_BODY | CAT_CHIP)) return true;
+  }
+  return false;
+}
+
+/**
+ * Has a chip run into something new — a card, a box, another chip?
+ *
+ * `except` is whatever it was already touching when it was armed or launched:
+ * the pile it was lying in, the neighbour it was leaning on. Without that, a
+ * chip touching anything at all would register a hit on its first frame and go
+ * off where it stands; a plain "has it moved far enough yet" clearance would
+ * instead miss exactly the short-range hits worth catching.
+ *
+ * The ground and the chrome are not hits. Landing on the accordion is how a chip
+ * comes to rest on the accordion.
+ */
+export function struck(world: World, point: number, except: Contacts): boolean {
+  const b = world.points[point].body;
+  for (let ce = b.getContactList(); ce; ce = ce.next) {
+    const other = ce.other;
+    if (!ce.contact?.isTouching() || !other) continue;
+    if (!except.has(other) && isScenery(other)) return true;
+  }
+  return false;
+}
+
+/**
+ * Cuts the thrust: it hit something on the way up, so it is a falling chip again
+ * — keeping whatever the impact left it with, which is what makes it drop away
+ * from the collision rather than blink out of it.
+ */
+export function abortLaunch(world: World, point: number): void {
+  const b = world.points[point].body;
+  b.setGravityScale(1);
+  for (let f = b.getFixtureList(); f; f = f.getNext()) {
+    f.setFilterData({
+      groupIndex: 0,
+      categoryBits: CAT_CHIP,
+      maskBits: CHIP_MASK,
     });
   }
   b.setAwake(true);

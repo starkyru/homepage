@@ -603,6 +603,11 @@ export default function SkillChainMobile({
       <div
         ref={accordionRef}
         className={className}
+        // Solid while it is up — one box over the whole bar, arrows included —
+        // so a chip snapped off a box lands on it instead of dropping past. Off
+        // while it is parked below the frame, or it would be an invisible shelf
+        // lying across the floor.
+        data-solid={panelUp ? 'box' : 'off'}
         style={{
           position: 'fixed',
           left: 0,

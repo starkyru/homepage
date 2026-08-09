@@ -141,6 +141,36 @@ chain goes.
 - A launched chip is deactivated, not destroyed, when it goes off: every point,
   stick and pose is addressed by index, and `reset()` has to bring it back.
 
+Armed is a live state, not a colour. Anything that runs into an armed chip sets
+it off where it lies; a chip already _in flight_ is the opposite case — hit
+something on the way up and the thrust dies, so it comes down as the loose chip
+it was, with no burst. Both use `struck()`, which ignores whatever the chip was
+already touching when it was armed or launched (the pile it was lying in, the
+panel it was resting on). A plain "has it moved far enough yet" clearance was
+tried first and misses exactly the short-range hits worth catching.
+
+## Solid Chrome
+
+The accordion panel and the nav buttons take part in the physics: mark an
+element `data-solid="box"` or `"circle"` and `hudSolids` gives it a body that
+tracks where it is on screen, so a snapped-off chip lands on it instead of
+falling past. Set the attribute to anything else while the element is parked
+off-screen, or it is an invisible shelf lying across the floor.
+
+- **Kinematic and driven by velocity, not static and teleported.** A teleported
+  body carries nothing: the panel slides out from under a chip on every scroll,
+  and rises straight through one when the accordion opens.
+- **A box becomes a shelf across its top edge, at a fixed depth.** The fixture is
+  built once and kept — rebuilding it as the accordion animates destroys the
+  contact every frame, and a contact that never survives a step never pushes
+  anything anywhere. Thin is safe: Box2D runs continuous collision for dynamic
+  against non-dynamic.
+- **Only chips collide with it.** A card swinging into the panel, or a mobile
+  strand shouldered aside by it on every scroll, is not what anyone asked for.
+- The chains only sync it once something has been snapped off. Measuring an
+  element costs a layout read, and with nothing loose nothing can be resting on
+  it anyway.
+
 ## Path Aliases
 
 - `@/*` → `./src/*`

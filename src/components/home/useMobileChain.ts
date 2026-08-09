@@ -3,6 +3,7 @@ import { RefObject, useCallback, useEffect, useRef } from 'react';
 import type { ChipRockets } from './chipRockets';
 import { createChipRockets } from './chipRockets';
 import type { Fireworks } from './fireworks';
+import { createHudSolids } from './hudSolids';
 import { MOBILE_HEADER_H, MOBILE_NAV_H, type MobileScene } from './model';
 import {
   breakStick,
@@ -91,6 +92,7 @@ export function useMobileChain(
     for (const c of scene.chips) chipSticksById.set(c.id, c.sticks);
     const rockets = fxRef ? createChipRockets(world, stage, fxRef) : null;
     rocketsRef.current = rockets;
+    const solids = createHudSolids(world, stage);
 
     const nodes: Node[] = [];
     stage.querySelectorAll<HTMLElement>('[data-point]').forEach((el) => {
@@ -282,6 +284,10 @@ export function useMobileChain(
     const MAX_STEP = 44; // px/frame — well above a normal drag, kills flings
 
     const loop = () => {
+      // Before the step, so the solver sees the chrome where it is now, and only
+      // once something has been snapped off that could land on it — measuring an
+      // element costs a layout read.
+      if (snapped.size) solids.sync();
       edgeScroll();
       applyScrollInertia();
       clampSpeed(world, MAX_STEP);
@@ -383,6 +389,7 @@ export function useMobileChain(
       window.removeEventListener('pointerup', onUp);
       stage.removeEventListener('keydown', onKey);
       rocketsRef.current = null;
+      solids.destroy();
     };
   }, [scene, active, stageRef, scrollRef, fxRef]);
 
