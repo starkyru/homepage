@@ -34,7 +34,6 @@ interface Node {
   af: number; // box attach fraction (rotation pivot / origin)
   bl: number;
   br: number;
-  lastT: string;
 }
 
 interface BoxFrame {
@@ -116,7 +115,6 @@ export function useMobileChain(
         af: Number(el.dataset.af ?? 0.5),
         bl: Number(el.dataset.bl ?? -1),
         br: Number(el.dataset.br ?? -1),
-        lastT: '',
       });
     });
     for (const n of nodes) {
@@ -161,10 +159,13 @@ export function useMobileChain(
           uR,
         });
         const tf = `translate(${r1(p.x - n.af * n.w)}px, ${r1(p.y)}px) rotate(${r1(deg)}deg)`;
-        if (tf !== n.lastT) {
-          n.el.style.transform = tf;
-          n.lastT = tf;
-        }
+        // Against the DOM, not a remembered string: React owns these elements
+        // too, and re-rendering the chain (opening the accordion, say) writes
+        // the JSX transform straight over this one — translate only, no
+        // rotation. Comparing with what is actually on the element means the
+        // very next frame puts the pose back, and an untouched node still costs
+        // no write, which is what keeps native tooltips from being reset.
+        if (tf !== n.el.style.transform) n.el.style.transform = tf;
       }
       // pass 2 — chips (spin with their box until snapped) + the fixed circle
       for (const n of nodes) {
@@ -182,10 +183,13 @@ export function useMobileChain(
         } else {
           tf = base;
         }
-        if (tf !== n.lastT) {
-          n.el.style.transform = tf;
-          n.lastT = tf;
-        }
+        // Against the DOM, not a remembered string: React owns these elements
+        // too, and re-rendering the chain (opening the accordion, say) writes
+        // the JSX transform straight over this one — translate only, no
+        // rotation. Comparing with what is actually on the element means the
+        // very next frame puts the pose back, and an untouched node still costs
+        // no write, which is what keeps native tooltips from being reset.
+        if (tf !== n.el.style.transform) n.el.style.transform = tf;
       }
       for (const line of ropeLines) {
         const s = world.sticks[Number(line.dataset.stick)];

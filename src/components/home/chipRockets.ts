@@ -5,14 +5,7 @@ import type { RefObject } from 'react';
 import type { Fireworks } from './fireworks';
 import { palette } from './model';
 import type { Contacts, World } from './physics';
-import {
-  abortLaunch,
-  launch,
-  setLive,
-  struck,
-  touching,
-  vanish,
-} from './physics';
+import { launch, setLive, struck, touching, vanish } from './physics';
 
 const ARMED_RED = 'rgba(255,70,70,.9)';
 const APEX_SHARE = 0.8; // it goes off 80% of the way up the screen
@@ -65,11 +58,11 @@ export interface ChipRockets {
  * colours. Anything else armed that the sparks reach goes off too, since they
  * all report to the same particle layer.
  *
- * Armed is a live state, not just a colour. Anything that runs into an armed
- * chip sets it off where it lies — most often the accordion opening underneath
- * and shoving it up into a card. A chip *in flight* is the opposite case: run
- * into something on the way up and the thrust simply dies, so it comes back down
- * as the loose chip it was, with no burst at all.
+ * Armed is a live state, not just a colour. Anything that runs into a lit chip
+ * sets it off, on the ground or in the air: the accordion opening underneath and
+ * shoving it into a card, another ball landing on it, or its own flight running
+ * into a ball on the way up. A rocket never comes back down — it either reaches
+ * its apex or goes off against whatever it met first.
  *
  * Both chains drive this: the geometry is theirs, the sequence is the same.
  */
@@ -113,19 +106,14 @@ export function createChipRockets(
 
   /**
    * A rocket has flown into a ball. Whatever a tap would have done to that ball,
-   * do — it is knocked off its card, or armed, or (already being live) set off
-   * where it hangs.
+   * do — it is knocked off its card, or armed. One that was already lit goes off
+   * where it stands, the same as being hit by anything else.
    */
   const strike = (node: ChipNode) => {
     const target = live.find((l) => l.id === node.id);
     if (target) {
       const at = live.indexOf(target);
-      if (target.flying) {
-        abortLaunch(world, target.point);
-        dress(target.el, false);
-      } else {
-        detonate(target);
-      }
+      detonate(target);
       live.splice(at, 1);
       return;
     }
@@ -202,22 +190,17 @@ export function createChipRockets(
 
       for (let i = live.length - 1; i >= 0; i--) {
         const l = live[i];
+        // Hitting something is what a live chip does: it goes off, in the air
+        // or on the ground, and whatever it ran into reacts as if tapped.
         const ball = l.flying ? flownInto(l) : null;
         if (ball) {
-          // It goes no further, and what it hit reacts as if it had been tapped.
-          abortLaunch(world, l.point);
-          dress(l.el, false);
+          detonate(l);
           live.splice(i, 1);
           strike(ball);
           continue;
         }
         if (struck(world, l.point, l.except)) {
-          if (l.flying) {
-            abortLaunch(world, l.point); // knocked out of the sky; it falls
-            dress(l.el, false);
-          } else {
-            detonate(l); // something ran into a live one
-          }
+          detonate(l);
           live.splice(i, 1);
           continue;
         }

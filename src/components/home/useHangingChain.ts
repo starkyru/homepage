@@ -33,7 +33,6 @@ interface PositionedNode {
   af: number; // card attach fraction across the top (rotation pivot / origin)
   bl: number;
   br: number;
-  lastT: string; // last transform written (skip identical writes)
 }
 
 /**
@@ -105,7 +104,6 @@ export function useHangingChain(
         af: Number(el.dataset.af ?? 0.5),
         bl: Number(el.dataset.bl ?? -1),
         br: Number(el.dataset.br ?? -1),
-        lastT: '',
       });
     });
     for (const n of nodes) {
@@ -168,10 +166,13 @@ export function useHangingChain(
         // origin is the attach fraction (set as transform-origin in the JSX), so
         // translate the top-left there and rotate about it.
         const tf = `translate(${r1(p.x - n.af * n.w)}px, ${r1(p.y)}px) rotate(${r1(deg)}deg)`;
-        if (tf !== n.lastT) {
-          n.el.style.transform = tf;
-          n.lastT = tf;
-        }
+        // Against the DOM, not a remembered string: React owns these elements
+        // too, and re-rendering the chain (opening the accordion, say) writes
+        // the JSX transform straight over this one — translate only, no
+        // rotation. Comparing with what is actually on the element means the
+        // very next frame puts the pose back, and an untouched node still costs
+        // no write, which is what keeps native tooltips from being reset.
+        if (tf !== n.el.style.transform) n.el.style.transform = tf;
       }
       // pass 2 — everything else. A bolted chip spins with its card (rigid body
       // = orbit from physics + the card's own angle); a detached one tumbles free.
@@ -190,10 +191,13 @@ export function useHangingChain(
         } else {
           tf = base;
         }
-        if (tf !== n.lastT) {
-          n.el.style.transform = tf;
-          n.lastT = tf;
-        }
+        // Against the DOM, not a remembered string: React owns these elements
+        // too, and re-rendering the chain (opening the accordion, say) writes
+        // the JSX transform straight over this one — translate only, no
+        // rotation. Comparing with what is actually on the element means the
+        // very next frame puts the pose back, and an untouched node still costs
+        // no write, which is what keeps native tooltips from being reset.
+        if (tf !== n.el.style.transform) n.el.style.transform = tf;
       }
       for (const line of ropeLines) {
         const s = world.sticks[Number(line.dataset.stick)];

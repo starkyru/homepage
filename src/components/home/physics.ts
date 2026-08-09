@@ -908,18 +908,6 @@ export function struck(world: World, point: number, except: Contacts): boolean {
 }
 
 /**
- * Cuts the thrust: it hit something on the way up, so it is a falling chip again
- * — keeping whatever the impact left it with, which is what makes it drop away
- * from the collision rather than blink out of it.
- */
-export function abortLaunch(world: World, point: number): void {
-  const b = world.points[point].body;
-  b.setGravityScale(1);
-  setLive(world, point, false); // it goes dark, so it bumps into things again
-  b.setAwake(true);
-}
-
-/**
  * Takes a body out of the simulation where it stands — it just went off, and
  * what is left is particles. Deactivated rather than destroyed because every
  * point, stick and pose in the world is addressed by index: removing one would

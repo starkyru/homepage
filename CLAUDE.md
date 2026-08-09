@@ -141,10 +141,10 @@ chain goes.
 - A launched chip is deactivated, not destroyed, when it goes off: every point,
   stick and pose is addressed by index, and `reset()` has to bring it back.
 
-Armed is a live state, not a colour. Anything that runs into an armed chip sets
-it off where it lies; a chip already _in flight_ is the opposite case — hit
-something on the way up and the thrust dies, so it comes down as the loose chip
-it was, with no burst. Both use `struck()`, which ignores whatever the chip was
+Armed is a live state, not a colour. Anything that runs into a lit chip sets it
+off — on the ground or in the air. A rocket never comes back down: it either
+reaches its apex or goes off against the first thing it meets. Hits use
+`struck()`, which ignores whatever the chip was
 already touching when it was armed or launched (the pile it was lying in, the
 panel it was resting on). A plain "has it moved far enough yet" clearance was
 tried first and misses exactly the short-range hits worth catching.
@@ -155,14 +155,22 @@ chrome and other loose chips. A dark one (`LOOSE_MASK`) bumps into everything.
 So what a rocket hits is not a contact at all — `chipRockets` tests the geometry
 against every ball on the stage, welded ones included (a welded chip is a
 phantom to the solver regardless), and a hit does to that ball exactly what a tap
-would have: knocks it off its card, arms it, or sets off one already lit. The
-rocket goes dark and drops. Balls it launched from inside are not hits, or it
-would strike the pile it was sitting in.
+would have: knocks it off its card, arms it, or sets off one already lit — while
+the rocket itself explodes on the spot. Balls it launched from inside are not
+hits, or it would strike the pile it was sitting in.
 
 **The layer object handed to `useDiscSwarm` must be stable.** The swarm keys its
 effect on it, so a fresh object per render tears the swarm down and respawns
 every disc at a new random spot — the pile visibly jumps on any state change in
 the chain, opening the accordion included.
+
+**The chains own their nodes' `transform`, but React writes it too.** Each card
+and chip carries a JSX transform (translate only) that is recomputed from live
+physics on every render, so re-rendering the chain — opening the accordion, say
+— writes it straight over the pose the loop had put there, rotation and all. The
+loop therefore compares against the element's own inline style rather than a
+remembered string: an untouched node still costs no write, and a clobbered one
+is repaired on the very next frame.
 
 ## Solid Chrome
 
