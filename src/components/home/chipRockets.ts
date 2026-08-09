@@ -5,7 +5,14 @@ import type { RefObject } from 'react';
 import type { Fireworks } from './fireworks';
 import { palette } from './model';
 import type { Contacts, World } from './physics';
-import { abortLaunch, launch, struck, touching, vanish } from './physics';
+import {
+  abortLaunch,
+  launch,
+  setLive,
+  struck,
+  touching,
+  vanish,
+} from './physics';
 
 const ARMED_RED = 'rgba(255,70,70,.9)';
 const APEX_SHARE = 0.8; // it goes off 80% of the way up the screen
@@ -20,6 +27,22 @@ interface Live {
   flying: boolean;
   /** What it was already touching when it was armed, or when it went up. */
   except: Contacts;
+  /** Balls it was already overlapping when it went up — not hits. */
+  through: Set<string>;
+}
+
+/** One tech ball on the chain, whether still welded on or lying loose. */
+export interface ChipNode {
+  id: string;
+  point: number;
+  el: HTMLElement;
+}
+
+export interface RocketDeps {
+  /** Every chip on the stage — a rocket can run into any of them. */
+  chips: () => ChipNode[];
+  /** Do to a chip exactly what a tap on it would do. */
+  tapAsUser: (id: string, el: HTMLElement, point: number) => void;
 }
 
 export interface ChipRockets {
@@ -54,6 +77,7 @@ export function createChipRockets(
   world: World,
   stage: HTMLElement,
   fxRef: RefObject<Fireworks | null>,
+  deps: RocketDeps,
 ): ChipRockets {
   const live: Live[] = [];
   const spent = new Set<HTMLElement>();
@@ -87,6 +111,57 @@ export function createChipRockets(
     vanish(world, l.point); // out of the sim; the pieces are the particles now
   };
 
+  /**
+   * A rocket has flown into a ball. Whatever a tap would have done to that ball,
+   * do — it is knocked off its card, or armed, or (already being live) set off
+   * where it hangs.
+   */
+  const strike = (node: ChipNode) => {
+    const target = live.find((l) => l.id === node.id);
+    if (target) {
+      const at = live.indexOf(target);
+      if (target.flying) {
+        abortLaunch(world, target.point);
+        dress(target.el, false);
+      } else {
+        detonate(target);
+      }
+      live.splice(at, 1);
+      return;
+    }
+    deps.tapAsUser(node.id, node.el, node.point);
+  };
+
+  /** Every ball whose circle the one at `point` is inside right now. */
+  const overlapping = (point: number, self: string): Set<string> => {
+    const p = world.points[point];
+    const out = new Set<string>();
+    for (const node of deps.chips()) {
+      if (node.id === self || spent.has(node.el)) continue;
+      const q = world.points[node.point];
+      if (q && Math.hypot(q.x - p.x, q.y - p.y) < p.r + q.r) out.add(node.id);
+    }
+    return out;
+  };
+
+  /**
+   * The ball a rocket is flying through, if any. Geometry, not contacts: a lit
+   * chip passes through the scenery by design, and a chip still welded to its
+   * card is a phantom to the solver either way — so the one thing most worth
+   * hitting is the one thing the solver will never report.
+   */
+  const flownInto = (rk: Live): ChipNode | null => {
+    const p = world.points[rk.point];
+    for (const node of deps.chips()) {
+      if (node.id === rk.id || spent.has(node.el)) continue;
+      if (rk.through.has(node.id)) continue; // it launched from inside this one
+      const q = world.points[node.point];
+      if (!q) continue;
+      if (Math.hypot(q.x - p.x, q.y - p.y) < p.r + q.r) return node;
+    }
+    return null;
+  };
+
   return {
     snapped(el) {
       label(el, 'arm it');
@@ -96,21 +171,25 @@ export function createChipRockets(
       if (spent.has(el)) return;
       const armed = live.find((l) => l.id === id);
       if (armed) {
-        dress(el, false);
-        launch(world, point);
+        if (armed.flying) return; // already up there
+        launch(world, point); // the halo stays on: it is still live
         armed.flying = true;
         // Re-taken as it leaves: it has been lying there since it was armed, and
-        // may well have been leant on in the meantime.
+        // may well have been leant on in the meantime. Balls it is already
+        // inside are not hits either, or it would strike the pile it sat in.
         armed.except = touching(world, point);
+        armed.through = overlapping(point, id);
         return;
       }
       dress(el, true);
+      setLive(world, point, true); // lit: it stops bumping into the scenery
       live.push({
         id,
         point,
         el,
         flying: false,
         except: touching(world, point),
+        through: new Set(),
       });
     },
 
@@ -123,9 +202,19 @@ export function createChipRockets(
 
       for (let i = live.length - 1; i >= 0; i--) {
         const l = live[i];
+        const ball = l.flying ? flownInto(l) : null;
+        if (ball) {
+          // It goes no further, and what it hit reacts as if it had been tapped.
+          abortLaunch(world, l.point);
+          dress(l.el, false);
+          live.splice(i, 1);
+          strike(ball);
+          continue;
+        }
         if (struck(world, l.point, l.except)) {
           if (l.flying) {
             abortLaunch(world, l.point); // knocked out of the sky; it falls
+            dress(l.el, false);
           } else {
             detonate(l); // something ran into a live one
           }
@@ -140,7 +229,10 @@ export function createChipRockets(
     },
 
     clear() {
-      for (const l of live) dress(l.el, false);
+      for (const l of live) {
+        dress(l.el, false);
+        setLive(world, l.point, false);
+      }
       live.length = 0;
       for (const el of spent) {
         el.style.visibility = '';

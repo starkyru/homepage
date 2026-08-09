@@ -1,6 +1,6 @@
 import { RefObject, useCallback, useEffect, useRef } from 'react';
 
-import type { ChipRockets } from './chipRockets';
+import type { ChipNode, ChipRockets } from './chipRockets';
 import { createChipRockets } from './chipRockets';
 import type { Fireworks } from './fireworks';
 import { createHudSolids } from './hudSolids';
@@ -90,7 +90,15 @@ export function useMobileChain(
     const snapped = snappedRef.current;
     const chipSticksById = new Map<string, number[]>();
     for (const c of scene.chips) chipSticksById.set(c.id, c.sticks);
-    const rockets = fxRef ? createChipRockets(world, stage, fxRef) : null;
+    // Filled once the node list below is built; the rockets read it lazily, as
+    // a chip in flight can run into any ball on the stage — welded ones too.
+    const chipNodes: ChipNode[] = [];
+    const rockets = fxRef
+      ? createChipRockets(world, stage, fxRef, {
+          chips: () => chipNodes,
+          tapAsUser: (id, el) => hitChip(id, el),
+        })
+      : null;
     rocketsRef.current = rockets;
     const solids = createHudSolids(world, stage);
 
@@ -111,6 +119,10 @@ export function useMobileChain(
         lastT: '',
       });
     });
+    for (const n of nodes) {
+      if (n.chip) chipNodes.push({ id: n.id, point: n.point, el: n.el });
+    }
+
     const ropeLines = Array.from(
       stage.querySelectorAll<SVGLineElement>('line[data-stick]'),
     );

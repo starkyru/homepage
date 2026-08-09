@@ -1,7 +1,7 @@
 'use client';
 
 import type { RefObject } from 'react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import type { Fireworks, Probe } from './fireworks';
 import { createFireworks } from './fireworks';
@@ -62,5 +62,9 @@ export function useFireworks(): FireworksLayer {
     };
   }, []);
 
-  return { hostRef, fxRef, watch };
+  // Stable identity, and not a nicety: the disc swarm keys its effect on this
+  // layer, so a fresh object every render would tear the swarm down and respawn
+  // every disc at a new random spot — the pile would jump on any state change in
+  // the chain, opening the accordion included.
+  return useMemo(() => ({ hostRef, fxRef, watch }), [watch]);
 }

@@ -68,11 +68,15 @@ const ROPE_MAX_STRETCH = 2.2;
 const FALL_DAMPING = 0.4;
 const CHIP_MASK = CAT_CHIP | CAT_GROUND | CAT_BODY | CAT_HUD;
 const BODY_MASK = CAT_BODY | CAT_CHIP | CAT_GROUND;
-// What a chip lying around collides with. Pointedly not CAT_CHIP, which is also
-// what the stack ball wears: the accordion opening under a pile of chips lifts
-// them, and if they could lean on the ball it would shove the whole chain about.
-// Rockets are the exception and re-add it — see `launch`.
-const LOOSE_MASK = CAT_LOOSE | CAT_GROUND | CAT_BODY | CAT_HUD;
+// A chip that has been snapped off and is not lit: it collides with everything
+// solid, cards and the stack ball included.
+const LOOSE_MASK = CAT_CHIP | CAT_LOOSE | CAT_GROUND | CAT_BODY | CAT_HUD;
+// A lit one — armed, or under thrust — goes through cards and through the stack
+// ball. It still lies on the floor, on the chrome and on other loose chips,
+// because a live chip that fell through the world would just be gone. What it
+// hits on the way past is not a contact at all: see `chipRockets`, which tests
+// it geometrically and treats a hit as a tap on whatever was hit.
+const LIVE_MASK = CAT_LOOSE | CAT_GROUND | CAT_HUD;
 
 /** A named spot on a body, reported in stage pixels. Refreshed by `sync()`. */
 export interface Point {
@@ -826,16 +830,26 @@ const THRUST_G = 1.15;
 const LAUNCH_KICK = 220; // px/s off the mark, so the very first frame moves
 const LAUNCH_SPIN = 7; // rad/s tumble on the way up
 
+/** Lit chips pass through the scenery; dark ones bump into it. */
+export function setLive(world: World, point: number, lit: boolean): void {
+  const b = world.points[point].body;
+  for (let f = b.getFixtureList(); f; f = f.getNext()) {
+    f.setFilterData({
+      groupIndex: 0,
+      categoryBits: CAT_CHIP | CAT_LOOSE,
+      maskBits: lit ? LIVE_MASK : LOOSE_MASK,
+    });
+  }
+}
+
 /**
  * Sends a cut-loose chip up under its own thrust. Negative gravity scale rather
  * than an impulse: the ask is a rocket, and a rocket accelerates the whole way
  * up instead of coasting off one kick.
  *
- * On the way up it collides with other chips and with nothing else. Two of them
- * launched together knock each other out of the sky, and one climbing into a
- * chip lying on the panel scatters it — but a chip under thrust punching through
- * a hanging card would knock the entire chain about, and a firework that
- * shoulders the scenery aside on the way past reads as a bug, not a firework.
+ * It is lit, so it flies through the cards and through the stack ball rather
+ * than shouldering the scenery aside on the way past — which read as a bug
+ * rather than as a firework.
  */
 export function launch(world: World, point: number): void {
   const b = world.points[point].body;
@@ -843,14 +857,7 @@ export function launch(world: World, point: number): void {
   b.setGravityScale(-THRUST_G);
   b.setLinearVelocity(new Vec2(0, -LAUNCH_KICK / PPM));
   b.setAngularVelocity((Math.random() < 0.5 ? -1 : 1) * LAUNCH_SPIN);
-  for (let f = b.getFixtureList(); f; f = f.getNext()) {
-    f.setFilterData({
-      groupIndex: 0,
-      categoryBits: CAT_CHIP | CAT_LOOSE,
-      // Balls only — the big one included, which a rocket is welcome to shove.
-      maskBits: CAT_CHIP | CAT_LOOSE,
-    });
-  }
+  setLive(world, point, true);
   b.setAwake(true);
 }
 
@@ -908,13 +915,7 @@ export function struck(world: World, point: number, except: Contacts): boolean {
 export function abortLaunch(world: World, point: number): void {
   const b = world.points[point].body;
   b.setGravityScale(1);
-  for (let f = b.getFixtureList(); f; f = f.getNext()) {
-    f.setFilterData({
-      groupIndex: 0,
-      categoryBits: CAT_CHIP | CAT_LOOSE,
-      maskBits: LOOSE_MASK,
-    });
-  }
+  setLive(world, point, false); // it goes dark, so it bumps into things again
   b.setAwake(true);
 }
 

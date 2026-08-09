@@ -149,6 +149,21 @@ already touching when it was armed or launched (the pile it was lying in, the
 panel it was resting on). A plain "has it moved far enough yet" clearance was
 tried first and misses exactly the short-range hits worth catching.
 
+**Lit chips are phantoms** (`LIVE_MASK`): armed or under thrust, a chip goes
+through the cards and through the stack ball, and only lies on the floor, the
+chrome and other loose chips. A dark one (`LOOSE_MASK`) bumps into everything.
+So what a rocket hits is not a contact at all — `chipRockets` tests the geometry
+against every ball on the stage, welded ones included (a welded chip is a
+phantom to the solver regardless), and a hit does to that ball exactly what a tap
+would have: knocks it off its card, arms it, or sets off one already lit. The
+rocket goes dark and drops. Balls it launched from inside are not hits, or it
+would strike the pile it was sitting in.
+
+**The layer object handed to `useDiscSwarm` must be stable.** The swarm keys its
+effect on it, so a fresh object per render tears the swarm down and respawns
+every disc at a new random spot — the pile visibly jumps on any state change in
+the chain, opening the accordion included.
+
 ## Solid Chrome
 
 The accordion panel and the nav buttons take part in the physics: mark an
