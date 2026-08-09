@@ -116,6 +116,31 @@ Snapping a chip off destroys its weld joint — the card then tilts because its
 balance genuinely changed. A cut-loose body drops to `FALL_DAMPING` so it falls
 properly instead of drifting, and is exempt from mobile's anti-tangle speed cap.
 
+## Fireworks
+
+One tap arms a thing (a red halo, `.pop-armed`), the next sets it off. A tech
+disc in the stack ball pops where it sits; a chip that has already been snapped
+off its card flies up under thrust and airbursts at 80% of the screen height.
+Any particle that reaches something else armed sets that off too, which is how a
+chain goes.
+
+- **`fireworks.ts` is DOM-imperative and drives its own rAF** for exactly as long
+  as it has particles. Its coordinates are _stage_ pixels, and its host div is a
+  sibling of the ball and the cards: both clip their content, and the sparks are
+  meant to leave. 1 in 10 of a disc burst is caught by the ball and rattles
+  around inside it — that minority is what sells the rest as having escaped.
+- **Particles are time-stepped, the disc pile is frame-stepped.** A settling pile
+  run at 120Hz just settles sooner; a spray run at 120Hz is over in half the time.
+- **The watcher list belongs to the layer, not to the engine** (`useFireworks`).
+  The engine cannot exist before its host is mounted, and effects run
+  children-first — so the stack ball always subscribes before the stage has an
+  engine. Registering on the engine silently costs the chain reaction.
+- **Nothing here may animate `transform`.** The sims write the transform of every
+  disc and chip once a frame, so the armed halo is `box-shadow` only, and its
+  border colour is set inline (a class cannot outrank an inline declaration).
+- A launched chip is deactivated, not destroyed, when it goes off: every point,
+  stick and pose is addressed by index, and `reset()` has to bring it back.
+
 ## Path Aliases
 
 - `@/*` → `./src/*`

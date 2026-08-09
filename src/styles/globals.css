@@ -1021,3 +1021,43 @@ html.dark {
   outline: 2px solid rgba(224, 164, 88, 0.9);
   outline-offset: 3px;
 }
+
+/*
+ * Armed: a tech disc inside the stack ball, or a chip that has been snapped off
+ * a card. One tap arms it — a semi-transparent red halo — and the next sets it
+ * off: the disc pops where it sits, the chip flies up and airbursts.
+ *
+ * box-shadow only, never transform: the sims write every one of these elements'
+ * transform once a frame, and an animated transform here would fight it (last
+ * writer wins, 60 times a second, and the element would sit still or teleport).
+ *
+ * The steady halo lives on the class, not in the keyframes, so reduced motion
+ * still gets the state — dimmer and not throbbing, but plainly "this one is
+ * live". The border colour is set inline for the same reason the rest of these
+ * elements' styling is: a class rule cannot outrank an inline declaration.
+ */
+.pop-armed {
+  box-shadow:
+    0 0 12px 3px rgba(255, 45, 45, 0.45),
+    inset 0 0 8px rgba(255, 45, 45, 0.3);
+}
+
+@keyframes pop-arm {
+  0%,
+  100% {
+    box-shadow:
+      0 0 6px 1px rgba(255, 45, 45, 0.3),
+      inset 0 0 6px rgba(255, 45, 45, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 18px 6px rgba(255, 45, 45, 0.7),
+      inset 0 0 12px rgba(255, 45, 45, 0.45);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pop-armed {
+    animation: pop-arm 1.1s ease-in-out infinite;
+  }
+}

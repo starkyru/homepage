@@ -677,6 +677,52 @@ export function breakStick(world: World, index: number): void {
   chip.body.setAwake(true);
 }
 
+// --- launching ---------------------------------------------------------------
+
+/** Upward thrust as a multiple of gravity, so the rise reads like the fall. */
+const THRUST_G = 1.15;
+const LAUNCH_KICK = 220; // px/s off the mark, so the very first frame moves
+const LAUNCH_SPIN = 7; // rad/s tumble on the way up
+
+/**
+ * Sends a cut-loose chip up under its own thrust. Negative gravity scale rather
+ * than an impulse: the ask is a rocket, and a rocket accelerates the whole way
+ * up instead of coasting off one kick.
+ *
+ * It also stops colliding. A chip under thrust punching through a hanging card
+ * would knock the entire chain about, and a firework that shoulders the scenery
+ * aside on the way past reads as a bug rather than as a firework.
+ */
+export function launch(world: World, point: number): void {
+  const b = world.points[point].body;
+  if (!b.isDynamic()) return;
+  b.setGravityScale(-THRUST_G);
+  b.setLinearVelocity(new Vec2(0, -LAUNCH_KICK / PPM));
+  b.setAngularVelocity((Math.random() < 0.5 ? -1 : 1) * LAUNCH_SPIN);
+  for (let f = b.getFixtureList(); f; f = f.getNext()) {
+    f.setFilterData({
+      groupIndex: 0,
+      categoryBits: CAT_CHIP,
+      maskBits: 0,
+    });
+  }
+  b.setAwake(true);
+}
+
+/**
+ * Takes a body out of the simulation where it stands — it just went off, and
+ * what is left is particles. Deactivated rather than destroyed because every
+ * point, stick and pose in the world is addressed by index: removing one would
+ * renumber the scene out from under everything holding an index into it, and
+ * `reset()` has to be able to bring the chip back.
+ */
+export function vanish(world: World, point: number): void {
+  const b = world.points[point].body;
+  b.setLinearVelocity(new Vec2(0, 0));
+  b.setAngularVelocity(0);
+  b.setActive(false);
+}
+
 /** Restores every body to its post-warm-start transform and re-welds the chips
  *  that were snapped off. */
 export function reset(world: World): void {
@@ -685,7 +731,9 @@ export function reset(world: World): void {
   world.bodies.forEach((b, i) => {
     const r = world.rest[i];
     if (!r) return;
+    b.setActive(true); // a chip that went off is back with the rest of them
     if (b.isDynamic()) {
+      b.setGravityScale(1); // undo a launch's inverted gravity
       b.setLinearDamping(damp); // undo the free-fall damping of snapped chips
       b.setAngularDamping(damp);
     }

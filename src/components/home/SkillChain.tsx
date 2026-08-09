@@ -13,6 +13,7 @@ import type { Scene } from './model';
 import { ANCHOR_Y, EXPERIENCE, palette, PANEL_W, techLogo } from './model';
 import { dropFrom, lean, payOut } from './physics';
 import SkillChainStackBall from './StackBall';
+import { useFireworks } from './useFireworks';
 import { useHangingChain } from './useHangingChain';
 
 /** Where the chain sits in the boring-mode transition. `in` is the settled,
@@ -152,6 +153,7 @@ export default function SkillChain({
   const [ready, setReady] = useState(false);
   // Forwards a card tap to openCard (defined below, after its dependencies).
   const openCardRef = useRef<(index: number) => void>(() => {});
+  const fx = useFireworks();
   const { reset } = useHangingChain(
     stageRef,
     scene,
@@ -159,6 +161,7 @@ export default function SkillChain({
     () => setReady(true),
     (i) => openCardRef.current(i),
     held,
+    fx.fxRef,
   );
   const P = (i: number) => scene.world.points[i];
 
@@ -520,6 +523,7 @@ export default function SkillChain({
             labels={scene.techBall.labels}
             initialX={P(scene.techBall.point).x}
             initialY={P(scene.techBall.point).y}
+            fx={fx}
           />
 
           {/* experience cards */}
@@ -633,6 +637,20 @@ export default function SkillChain({
               </div>
             );
           })}
+
+          {/* Particle layer for everything on this stage that can explode. Last
+              child and over the cards, so a spark crossing one is in front of
+              it, and deaf to the pointer so it never steals a tap. */}
+          <div
+            ref={fx.hostRef}
+            aria-hidden
+            style={{
+              position: 'absolute',
+              inset: 0,
+              pointerEvents: 'none',
+              zIndex: 4,
+            }}
+          />
         </div>
       </div>
 

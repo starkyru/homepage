@@ -1,5 +1,8 @@
 import { RefObject, useCallback, useEffect, useRef } from 'react';
 
+import type { ChipRockets } from './chipRockets';
+import { createChipRockets } from './chipRockets';
+import type { Fireworks } from './fireworks';
 import { MOBILE_HEADER_H, MOBILE_NAV_H, type MobileScene } from './model';
 import {
   breakStick,
@@ -62,9 +65,11 @@ export function useMobileChain(
   active: boolean,
   onSettled?: () => void, // fired once the strand stops moving (reveal cue)
   onBoxClick?: (index: number) => void, // tap (not drag) on a box
+  fxRef?: RefObject<Fireworks | null>, // stage particle layer, for chip rockets
 ) {
   const rafRef = useRef<number | null>(null);
   const snappedRef = useRef<Set<string>>(new Set());
+  const rocketsRef = useRef<ChipRockets | null>(null);
   const onSettledRef = useRef(onSettled);
   onSettledRef.current = onSettled;
   const onBoxClickRef = useRef(onBoxClick);
@@ -73,6 +78,7 @@ export function useMobileChain(
   const reset = useCallback(() => {
     resetWorld(scene.world); // restores the rest pose and re-welds every chip
     snappedRef.current.clear();
+    rocketsRef.current?.clear(); // and un-arms / brings back the ones that went off
   }, [scene]);
 
   useEffect(() => {
@@ -83,6 +89,8 @@ export function useMobileChain(
     const snapped = snappedRef.current;
     const chipSticksById = new Map<string, number[]>();
     for (const c of scene.chips) chipSticksById.set(c.id, c.sticks);
+    const rockets = fxRef ? createChipRockets(world, stage, fxRef) : null;
+    rocketsRef.current = rockets;
 
     const nodes: Node[] = [];
     stage.querySelectorAll<HTMLElement>('[data-point]').forEach((el) => {
@@ -239,6 +247,7 @@ export function useMobileChain(
     let dragClient = { x: 0, y: 0 }; // last pointer position (viewport coords)
     let pressCardIdx = -1;
     let pressSnap = '';
+    let pressSnapEl: HTMLElement | null = null; // the chip that press landed on
     let pressAt = { x: 0, y: 0 };
 
     // Drag a box toward the top / bottom edge → auto-scroll the strand, keeping
@@ -278,16 +287,24 @@ export function useMobileChain(
       clampSpeed(world, MAX_STEP);
       step(world);
       render();
+      rockets?.tick(); // anything in the air that has reached its apex goes off
       checkSettled();
       rafRef.current = requestAnimationFrame(loop);
     };
 
-    const snap = (id: string) => {
-      if (!id || snapped.has(id)) return;
+    // First tap cuts the chip loose. After that the same tap arms it, and then
+    // launches it — see `chipRockets`.
+    const hitChip = (id: string, el: HTMLElement | null) => {
+      if (!id) return;
+      if (snapped.has(id)) {
+        if (el) rockets?.tap(id, el, Number(el.dataset.point));
+        return;
+      }
       const sticks = chipSticksById.get(id);
       if (!sticks) return;
       snapped.add(id);
       for (const s of sticks) breakStick(world, s); // cut the weld → it drops
+      if (el) rockets?.snapped(el);
     };
 
     const onDown = (e: PointerEvent) => {
@@ -306,6 +323,7 @@ export function useMobileChain(
       const snapEl = target.closest<HTMLElement>('[data-snap]');
       if (snapEl) {
         pressSnap = snapEl.dataset.snap ?? '';
+        pressSnapEl = snapEl;
         pressAt = local(e);
       }
     };
@@ -332,8 +350,10 @@ export function useMobileChain(
       }
       if (pressSnap) {
         const l = local(e);
-        if (Math.hypot(l.x - pressAt.x, l.y - pressAt.y) < 6) snap(pressSnap);
+        if (Math.hypot(l.x - pressAt.x, l.y - pressAt.y) < 6)
+          hitChip(pressSnap, pressSnapEl);
         pressSnap = '';
+        pressSnapEl = null;
       }
     };
 
@@ -341,7 +361,7 @@ export function useMobileChain(
       if (e.key !== 'Enter' && e.key !== ' ') return;
       const el = (e.target as HTMLElement)?.closest<HTMLElement>('[data-snap]');
       if (el) {
-        snap(el.dataset.snap ?? '');
+        hitChip(el.dataset.snap ?? '', el);
         e.preventDefault();
       }
     };
@@ -362,8 +382,9 @@ export function useMobileChain(
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       stage.removeEventListener('keydown', onKey);
+      rocketsRef.current = null;
     };
-  }, [scene, active, stageRef, scrollRef]);
+  }, [scene, active, stageRef, scrollRef, fxRef]);
 
   return { reset };
 }

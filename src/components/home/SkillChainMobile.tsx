@@ -19,6 +19,7 @@ import {
   techLogo,
 } from './model';
 import SkillChainStackBall from './StackBall';
+import { useFireworks } from './useFireworks';
 import { useMobileChain } from './useMobileChain';
 
 /**
@@ -249,6 +250,7 @@ export default function SkillChainMobile({
     [scene, bandCenter, scrollTo],
   );
 
+  const fx = useFireworks();
   useMobileChain(
     stageRef,
     scrollRef,
@@ -256,6 +258,7 @@ export default function SkillChainMobile({
     true,
     () => setReady(true),
     openBox,
+    fx.fxRef,
   );
 
   // Which boxes actually clip has to be measured, not derived: the box height
@@ -438,6 +441,7 @@ export default function SkillChainMobile({
           labels={scene.techBall.labels}
           initialX={P(scene.techBall.point).x}
           initialY={P(scene.techBall.point).y}
+          fx={fx}
         />
 
         {/* experience boxes */}
@@ -579,6 +583,20 @@ export default function SkillChainMobile({
             </div>
           );
         })}
+
+        {/* Particle layer for everything on this stage that can explode. Last
+            child and over the boxes, so a spark crossing one is in front of it,
+            and deaf to the pointer so it never steals a tap. */}
+        <div
+          ref={fx.hostRef}
+          aria-hidden
+          style={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            zIndex: 4,
+          }}
+        />
       </div>
 
       {/* bottom accordion: details grow upward out of the title row */}
