@@ -27,9 +27,6 @@ export default function OpengraphImage() {
         borderLeft: `16px solid ${AMBER}`,
       }}
     >
-      <div style={{ fontSize: 34, color: AMBER, fontStyle: 'italic' }}>
-        ilia.to
-      </div>
       <div
         style={{
           display: 'flex',
