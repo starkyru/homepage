@@ -1,0 +1,40 @@
+# Ilia Dzhiubanskii projects wiki
+
+Purpose: public-safe technical memory for a portfolio chat.
+Canonical routing page: index.md
+Technology reverse index: technologies.md
+Project pages: projects/*.md
+
+Retrieval rules:
+- Match project names and front-matter aliases.
+- Prefer one project page; retrieve up to three for comparisons.
+- Keep the overview and technology inventory in the same context window.
+- Do not infer employers, customers, revenue, adoption, or proficiency beyond the text.
+- Do not expose source paths, credentials, private infrastructure, or operational secrets.
+- Distinguish products, internal systems, libraries, experiments, and learning curricula.
+
+Pages:
+projects/agent-signals.md
+projects/angleforge.md
+projects/btw.md
+projects/canvas-editor.md
+projects/countersign.md
+projects/frontend-debugger.md
+projects/gallery-saas.md
+projects/homepage.md
+projects/learn-ai.md
+projects/learn-fullstack.md
+projects/mcpmake.md
+projects/overtone.md
+projects/printify-sdk.md
+projects/prodigi-print-api.md
+projects/ripple-text.md
+projects/skills.md
+projects/spendgate.md
+projects/store-ai.md
+projects/stream-schema.md
+projects/timerail.md
+projects/vue-sagas.md
+projects/wallsnap.md
+projects/zustand-sagas.md
+

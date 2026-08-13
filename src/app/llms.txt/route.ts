@@ -1,3 +1,5 @@
+import { wikiSummary } from '@/lib/wiki/llms';
+
 import resume from '@/data/resume.json';
 
 import { siteConfig } from '@/constant/config';
@@ -54,11 +56,15 @@ function build(): string {
     l.push(`- ${ed.field} — ${ed.school} (${ed.years})`);
   }
   l.push('');
+  l.push(...wikiSummary());
   l.push('## Pages');
   l.push('');
   l.push(`- [Home](${siteConfig.url}/): this resume, as an interactive page.`);
   l.push(
     `- [Projects](${siteConfig.url}/projects): apps and open-source work.`,
+  );
+  l.push(
+    `- [Projects wiki](${siteConfig.url}/llms-full.txt): full project pages.`,
   );
   l.push('');
   return l.join('\n');

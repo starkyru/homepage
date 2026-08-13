@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/build-wiki.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -21,6 +22,7 @@
     "postbuild": "next-sitemap --config next-sitemap.config.js",
     "prepare": "husky",
     "logos": "node scripts/fetch-logos.mjs",
+    "wiki": "node scripts/build-wiki.mjs && prettier -w src/data/wiki.generated.json src/data/projects.generated.json",
     "update:resume": "node scripts/parse-resume.mjs && node scripts/fetch-logos.mjs && prettier -w src/data/resume.json"
   },
   "dependencies": {

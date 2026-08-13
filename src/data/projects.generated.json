@@ -1,0 +1,226 @@
+{
+  "sections": [
+    {
+      "title": "Apps & Products",
+      "projects": [
+        {
+          "name": "Overtone.art",
+          "description": "Photography gallery and storefront I built and operate end-to-end. A Turbo monorepo: NestJS API, Next.js web, React Native mobile app, MCP server, and a Storybook component library. Stripe payments, automated print fulfillment via my own Printify/Prodigi SDKs, an in-browser design editor (canvas-editor), and a two-stage LLM pipeline that drafts artwork descriptions.",
+          "tools": "Turbo monorepo, NestJS, Next.js 15, React 19, React Native, Stripe, Anthropic SDK, Storybook, Fabric.js, PostgreSQL, Redis",
+          "repo": "",
+          "url": "https://overtone.art",
+          "private": false,
+          "beta": false
+        },
+        {
+          "name": "WallSnap",
+          "description": "Preview a print on your actual wall, at the right size. It started as one feature inside Overtone; I pulled the geometry out into a framework-neutral core so the browser preview and the server-rendered image agree pixel for pixel. Ships as a library, an embeddable widget, an API, and a Shopify app. Refreshing the room catalog before I submit it to the Shopify App Store.",
+          "tools": "TypeScript, React, Preact, Vite, Sharp, Hono, Zod, Shopify App Bridge, Prisma, Turborepo, Vitest, Playwright",
+          "repo": "",
+          "url": "https://wallsnap.app",
+          "private": false,
+          "beta": true
+        },
+        {
+          "name": "AngleForge",
+          "description": "Angle-first ad-creative factory. Paste one offer brief and it extracts the persuasion angles worth testing, crosses them with hooks, and renders every combination through deterministic HTML/CSS templates in five style tiers — direct-response, native editorial, lo-fi notes-app, iMessage thread, and As-Seen-On-TV — at exact Meta + Taboola placement sizes. Each variant is linted against per-vertical banned-claims rules before you spend a dollar, then exported as a ZIP whose filenames encode offer_angle_hook_style_size so results roll up by angle. Selected variants push as PAUSED ads to an ad account, and it runs end-to-end with no API keys via a deterministic fixture matrix.",
+          "tools": "Next.js, Anthropic Claude, NVIDIA NIM, OpenAI, fal.ai, Playwright, @stream-schema, sharp, Zod",
+          "repo": "",
+          "url": "https://angleforge.ilia.to",
+          "private": false,
+          "beta": true
+        },
+        {
+          "name": "Countersign",
+          "description": "Human approval for LangGraph agents. When an agent is about to do something consequential it pauses, a person sees a structured diff instead of a wall of JSON, and the graph resumes with approve, reject, edit, or a written answer. Typed Python SDK on one side, React inbox components on the other, one versioned JSON Schema between them. Open-source SDK plus a hosted console for teams.",
+          "tools": "Python, LangGraph, JSON Schema, TypeScript, React, Storybook, Next.js, AWS CDK, pytest, Vitest, Playwright",
+          "repo": "",
+          "url": "https://countersign.cloud",
+          "private": false,
+          "beta": false
+        },
+        {
+          "name": "Timerail",
+          "description": "Headless React calendar and resource scheduler. The hard parts — date math, recurrence, DST, drag and resize, collisions, screen-reader announcements — live in framework-neutral state machines, and the styles are optional and replaceable, so behavior and look can move independently. Day/week/month plus editors and recurrence in the free tier; virtualized resource timelines, capacity rules, export and undo/redo on top of it.",
+          "tools": "TypeScript, React 19, state machines, Temporal-aware date math, virtualization, Node.js, PostgreSQL, Vitest, fast-check, Playwright, axe-core",
+          "repo": "",
+          "url": "https://timerail.dev",
+          "private": false,
+          "beta": true
+        },
+        {
+          "name": "Gallery SaaS",
+          "description": "Overtone's architecture, generalized: a multi-tenant gallery and print storefront another photographer could run. NestJS API, tenant storefront, customer account app, operator panel, marketing site, and shared packages for catalog, money, and identity. Payment and fulfillment providers sit behind plug-in boundaries — drawing that line properly is most of why it was worth rebuilding.",
+          "tools": "NestJS, TypeORM, PostgreSQL, Next.js 15, React 19, Tailwind CSS, Stripe, Prodigi, EasyPost, AWS S3, Sharp, Three.js, Turborepo",
+          "repo": "",
+          "url": "",
+          "private": true,
+          "beta": false
+        },
+        {
+          "name": "Agent Signals",
+          "description": "Tells me when an agent is done. Producers publish a typed signal over MCP or plain HTTP, the broker fans it out over Server-Sent Events, and a SwiftUI menu-bar app on my Mac shows it. Deliberately small — one Zod schema as the cross-language contract, scoped tokens, SQLite. Not a messaging product; plumbing I use every day.",
+          "tools": "TypeScript, Next.js, MCP, Server-Sent Events, Zod, SQLite, Swift/SwiftUI, Vitest",
+          "repo": "",
+          "url": "",
+          "private": true,
+          "beta": false
+        },
+        {
+          "name": "Spendgate",
+          "description": "Token and dollar budgets enforced inside LangGraph rather than at a proxy, so spend can be attributed at node, subgraph, run, session, and user scope. A breach interrupts the graph at a checkpoint instead of throwing the run away — raise the cap and resume, or abandon it cleanly. Pre-alpha: the accounting works, the hardening does not yet.",
+          "tools": "Python, LangGraph, LangChain Core, OpenTelemetry, PostgreSQL/DynamoDB stores, pytest, mypy, Ruff, uv",
+          "repo": "",
+          "url": "",
+          "private": true,
+          "beta": false
+        },
+        {
+          "name": "Portfolio Homepage",
+          "description": "This site — and the part I am building right now is the chat. Ask whether I have done something and it answers out of this project wiki rather than out of thin air: pages are picked by exact name and technology matching, with no embedding index and no vector store; they reach the model as reference material the visitor's question never joins; and the ones it used are listed under the answer, so a claim can be checked against the page behind it. Around that: Next.js App Router, a hanging chain of cards on a real Box2D solver, and a resume parsed straight out of a Google Doc. The chain survives the trip to this page — same simulation, it just slides out of the way.",
+          "tools": "Next.js, React 19, TypeScript, Anthropic SDK, Planck.js, Tailwind CSS, next-sitemap, Jest",
+          "repo": "",
+          "url": "",
+          "private": false,
+          "beta": false
+        }
+      ]
+    },
+    {
+      "title": "Developer Tools & Libraries",
+      "projects": [
+        {
+          "name": "mcpmake",
+          "description": "Turn any API into an MCP server an AI agent can use, in one command — from an OpenAPI spec, Postman collection, HAR capture, or live URL. Generates a clean, typed, editable server you own. Published on npm as mcpmake + @mcpmake/core.",
+          "tools": "TypeScript monorepo, Anthropic SDK, swagger-parser, citty, Handlebars, json-schema-to-zod, Vitest",
+          "repo": "",
+          "url": "https://mcpmake.dev",
+          "private": true,
+          "beta": false
+        },
+        {
+          "name": "Frontend Debugger",
+          "description": "Gives a coding agent eyes on a running interface: component trees and state for React, Vue, Svelte and Angular, visual diffs attributed to the subtree that caused them, accessibility, and replayable failures — not just screenshots. Built on the Chrome DevTools Protocol, with no instrumentation added to the app under test, and shipped as an MCP server, a CLI, an Electron app, and a CI package. Tools load progressively so the agent context stays small until there is something to look at.",
+          "tools": "Chrome DevTools Protocol, TypeScript, MCP SDK, Electron, rrweb, axe-core, pixelmatch, Next.js, Prisma, Stripe, Vitest",
+          "repo": "",
+          "url": "",
+          "private": false,
+          "beta": false
+        },
+        {
+          "name": "btw",
+          "description": "Personal knowledge agent for code snippets, reusable skills, and project context — it works out what stack you are in and surfaces the relevant thing. One TypeScript core behind a terminal UI, a macOS app, an MCP server for coding tools, a Chrome extension, and a Telegram bot. Internal, but one domain layer serving that many clients without duplicating storage is the interesting part.",
+          "tools": "TypeScript monorepo (Turbo), ESLint/Prettier",
+          "repo": "",
+          "url": "",
+          "private": false,
+          "beta": false
+        },
+        {
+          "name": "canvas-editor",
+          "description": "Pluggable canvas editor built on Fabric.js: layers, undo/redo, crop, snapping, pattern tiling, product-mockup preview, and PNG/SVG/JSON export. Framework-agnostic core plus a React binding. Published on npm under @overtone-art; powers the Overtone.art design tools.",
+          "tools": "TypeScript, Fabric.js, React, tsup, AWS S3 adapter, Turbo, Vitest",
+          "repo": "",
+          "url": "",
+          "private": true,
+          "beta": false
+        },
+        {
+          "name": "Coding Agent Skills",
+          "description": "My own coding-agent skills, versioned like code. Each one packages a repeated workflow — scope, what to read first, tool preferences, safety limits, how to verify — so it can be loaded on demand instead of re-pasted into a prompt. Templates and validation scripts keep them structurally consistent. Internal infrastructure, not a product.",
+          "tools": "Markdown, YAML front matter, shell validation scripts, GitHub Actions",
+          "repo": "",
+          "url": "",
+          "private": true,
+          "beta": false
+        },
+        {
+          "name": "printify-sdk",
+          "description": "Typed TypeScript client for Printify's API — shops, catalogs, products, images, orders, shipping, errors. Written so Overtone's fulfillment code never touches raw HTTP. Published on npm.",
+          "tools": "TypeScript, Vitest, ESLint",
+          "repo": "printify-sdk",
+          "url": "",
+          "private": false,
+          "beta": false
+        },
+        {
+          "name": "prodigi-print-api",
+          "description": "Typed client for Prodigi's Print API v4 — quotes, orders, variants, assets, normalized errors — plus a small React explorer for poking at the integration without wiring diagnostic UI into a storefront. Overtone and Gallery SaaS both consume it through their fulfillment boundary.",
+          "tools": "TypeScript, tsup, Vitest, ESLint/Prettier",
+          "repo": "prodigi-print-api",
+          "url": "",
+          "private": false,
+          "beta": false
+        },
+        {
+          "name": "Store AI",
+          "description": "One state machine for consuming AI streams, with adapters for React, Vue, Angular, Svelte, Solid, Preact, Lit, Redux Toolkit, Zustand, Jotai, Valtio, Nanostores, and TanStack Store. The same stream lifecycle — partial, complete, cancelled, failed — mapped into whatever reactivity the host framework already has. Transport stays outside the package.",
+          "tools": "TypeScript monorepo (Turbo)",
+          "repo": "store-ai",
+          "url": "",
+          "private": false,
+          "beta": false
+        },
+        {
+          "name": "stream-schema",
+          "description": "Renders structured model output while it is still arriving: reconstructs partial JSON as it streams, then validates the finished value properly. Core plus React, Vue, and Zod integrations. Built because waiting for one final JSON object makes an AI interface feel broken. AngleForge runs on it.",
+          "tools": "TypeScript, tsup, Vitest",
+          "repo": "stream-schema",
+          "url": "",
+          "private": false,
+          "beta": false
+        },
+        {
+          "name": "zustand-sagas",
+          "description": "Redux-Saga-style generator orchestration for Zustand, no Redux required: watchers, cancellation, concurrency, task composition, all typed, with Zustand still owning the state. A separate app consumes the published package against a normal Vite build rather than a workspace link, which is where API problems actually show up.",
+          "tools": "TypeScript, Zustand, tsup, Vitest",
+          "repo": "zustand-sagas",
+          "url": "",
+          "private": false,
+          "beta": false
+        },
+        {
+          "name": "vue-sagas",
+          "description": "Saga-style side effect management for Vue/Pinia — framework-neutral core, then Vue and Pinia adapters. (Just a fun experiment, not sure if it has real-world use; the interesting bit was comparing Redux-derived orchestration against Vue reactivity.)",
+          "tools": "TypeScript, Vue, Pinia, Nx, Vite, Vitest",
+          "repo": "vue-sagas",
+          "url": "",
+          "private": false,
+          "beta": false
+        },
+        {
+          "name": "ripple-text",
+          "description": "Physics-driven text animation engine — characters react to mouse/touch via ripple waves and field effects (water caustics). Plain TypeScript rather than a component, so the page keeps its own layout and styling. It is what the headline on this site runs on.",
+          "tools": "TypeScript, Vite",
+          "repo": "ripple-text",
+          "url": "",
+          "private": false,
+          "beta": false
+        }
+      ]
+    },
+    {
+      "title": "Learning & Courses",
+      "projects": [
+        {
+          "name": "learn-ai",
+          "description": "A hands-on, project-based curriculum that goes from LLM fundamentals to production RAG and agents — in both TypeScript and Python. 24 numbered modules plus deep-dive companions, each runnable code you build, break, and extend across three depth lanes: use the ecosystem, hand-implement one core piece, or build the machinery from scratch (BPE tokenizer, attention head, vector index, ReAct loop).",
+          "tools": "TypeScript + Python monorepo (pnpm, uv), Jest, Anthropic / OpenAI / NVIDIA NIM providers, Chroma/Qdrant, LangGraph, MCP",
+          "repo": "learn-ai",
+          "url": "",
+          "private": false,
+          "beta": false
+        },
+        {
+          "name": "learn-fullstack",
+          "description": "A hands-on, project-based course from TypeScript basics to two production capstones — a Trello-lite Kanban board and a Slack-lite realtime chat. End-to-end TypeScript: React, Next.js, Node/NestJS, REST + GraphQL, Postgres raw and via Prisma, auth, realtime, Docker, testing, CI/CD. 30 numbered modules plus 20 lettered deep-dives across three depth lanes, with tutor/exam/progress slash commands.",
+          "tools": "TypeScript monorepo (Turbo, pnpm), React 19, Next.js, NestJS, GraphQL, Prisma, PostgreSQL, Docker, Vitest, Storybook",
+          "repo": "learn-fullstack",
+          "url": "",
+          "private": false,
+          "beta": false
+        }
+      ]
+    }
+  ]
+}
