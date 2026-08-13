@@ -10,6 +10,7 @@ import { personLd, websiteLd } from '@/lib/structured-data';
 
 import SiteShell from '@/components/home/SiteShell';
 import Navigation from '@/components/Navigation';
+import PortfolioChat from '@/components/PortfolioChat';
 
 import { siteConfig } from '@/constant/config';
 
@@ -90,6 +91,7 @@ export default function RootLayout({
             the panel never moves and the chain can slide out of the way instead
             of being torn down. Any other route it passes straight through. */}
         <SiteShell>{children}</SiteShell>
+        <PortfolioChat />
         <Script
           src='https://stats.ilia.to/script.js'
           data-website-id='9cbf542a-4bc0-40c5-a310-ddce1f02a4e9'
