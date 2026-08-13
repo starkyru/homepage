@@ -38,6 +38,32 @@ export interface RocketDeps {
   tapAsUser: (id: string, el: HTMLElement, point: number) => void;
 }
 
+const label = (el: HTMLElement, verb: string) => {
+  const name = el.getAttribute('title') ?? '';
+  el.setAttribute('aria-label', `${name} — press Enter to ${verb}`);
+};
+
+/**
+ * Every chip node on the stage back to the way the markup renders it: not armed,
+ * not spent, and labelled as something to snap off.
+ *
+ * Standalone, because it has to run without a rockets instance. What a chip
+ * looks like once it has been armed or blown up is written straight to its
+ * element, and the instance that wrote it dies with the chain — so a chain that
+ * comes back (out of boring mode, or in off /projects) has nobody left to undo
+ * it, and a chip that went off stays invisible for good.
+ */
+export function restoreChipNodes(stage: HTMLElement): void {
+  stage.querySelectorAll<HTMLElement>('[data-snap]').forEach((el) => {
+    el.classList.remove('pop-armed');
+    el.style.borderColor = palette.amber;
+    el.style.visibility = '';
+    el.removeAttribute('aria-hidden');
+    el.tabIndex = 0;
+    label(el, 'snap off'); // as the markup words it
+  });
+}
+
 export interface ChipRockets {
   /** A chip has just been snapped off its card — say what it can do now. */
   snapped(el: HTMLElement): void;
@@ -74,11 +100,6 @@ export function createChipRockets(
 ): ChipRockets {
   const live: Live[] = [];
   const spent = new Set<HTMLElement>();
-
-  const label = (el: HTMLElement, verb: string) => {
-    const name = el.getAttribute('title') ?? '';
-    el.setAttribute('aria-label', `${name} — press Enter to ${verb}`);
-  };
 
   const dress = (el: HTMLElement, on: boolean) => {
     // The halo is a class (box-shadow), the border is inline: the chip's own
@@ -212,22 +233,13 @@ export function createChipRockets(
     },
 
     clear() {
-      for (const l of live) {
-        dress(l.el, false);
-        setLive(world, l.point, false);
-      }
       live.length = 0;
-      for (const el of spent) {
-        el.style.visibility = '';
-        el.removeAttribute('aria-hidden');
-        el.tabIndex = 0;
-      }
       spent.clear();
       // Every chip is welded back on, so every chip is back to being snappable —
-      // including the ones that were only snapped off and never armed.
-      stage
-        .querySelectorAll<HTMLElement>('[data-snap]')
-        .forEach((el) => label(el, 'snap off')); // as the markup words it
+      // including the ones that were only snapped off and never armed. The world
+      // side belongs to `reset`, which re-welds each chip and puts the collision
+      // filter it was armed or launched with back as it goes.
+      restoreChipNodes(stage);
     },
   };
 }

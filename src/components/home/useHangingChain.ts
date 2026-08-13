@@ -1,7 +1,7 @@
 import { RefObject, useCallback, useEffect, useRef } from 'react';
 
 import type { ChipNode, ChipRockets } from './chipRockets';
-import { createChipRockets } from './chipRockets';
+import { createChipRockets, restoreChipNodes } from './chipRockets';
 import type { Fireworks } from './fireworks';
 import { createHudSolids } from './hudSolids';
 import { PANEL_W, type Scene } from './model';
@@ -13,6 +13,7 @@ import {
   nudge,
   release,
   reset as resetWorld,
+  restoreChips,
   step,
 } from './physics';
 
@@ -76,6 +77,15 @@ export function useHangingChain(
 
     const { world } = scene;
     const snapped = snappedRef.current;
+    // The chain is back: mounted again after boring mode, or live again after
+    // sitting parked on /projects. The world kept whatever was snapped off, but
+    // nothing that knew about it did — this set starts empty and the rockets are
+    // built fresh below — so a chip would be left lying where it fell with its
+    // rod drawn from the card all the way out to it, and one that had gone off
+    // would stay invisible. Put them back on their cards before the first frame.
+    restoreChips(world);
+    restoreChipNodes(stage);
+    snapped.clear();
     const chipSticksById = new Map<string, number[]>();
     for (const c of scene.chips) chipSticksById.set(c.id, c.sticks);
     // Filled once the node list below is built; the rockets read it lazily, as

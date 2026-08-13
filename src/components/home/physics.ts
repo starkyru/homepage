@@ -695,6 +695,83 @@ export function breakStick(world: World, index: number): void {
   chip.body.setAwake(true);
 }
 
+/**
+ * Puts one snapped-off chip back on its card and welds it there again, leaving
+ * the rest of the scene exactly where it stands.
+ *
+ * The chip is placed at its rest offset in the card's *current* frame, not at
+ * its own rest transform: the card may be parked mid-swing, and a weld joint
+ * takes its local anchors from where the two bodies are the moment it is
+ * created — so welding a chip where it happens to be lying is precisely the
+ * thing to avoid.
+ */
+function restoreChip(world: World, s: Stick, damp: number): void {
+  const card = world.points[s.a].body;
+  const chip = world.points[s.b].body;
+  const cr = world.rest[world.bodies.indexOf(card)];
+  const pr = world.rest[world.bodies.indexOf(chip)];
+  if (!cr || !pr) return;
+  // the chip's rest offset, taken out of the card's rest frame …
+  const ox = pr.x - cr.x;
+  const oy = pr.y - cr.y;
+  const rc = Math.cos(cr.a);
+  const rs = Math.sin(cr.a);
+  const lx = ox * rc + oy * rs;
+  const ly = -ox * rs + oy * rc;
+  // … and put back into the frame the card is in now.
+  const at = card.getPosition();
+  const a = card.getAngle();
+  const ac = Math.cos(a);
+  const as = Math.sin(a);
+  chip.setActive(true); // it may have gone off (see `vanish`)
+  chip.setTransform(
+    new Vec2(at.x + lx * ac - ly * as, at.y + lx * as + ly * ac),
+    a + (pr.a - cr.a),
+  );
+  chip.setGravityScale(1); // undo a launch's inverted gravity
+  chip.setLinearDamping(damp); // undo the free-fall damping it was cut loose to
+  chip.setAngularDamping(damp);
+  chip.setLinearVelocity(new Vec2(0, 0));
+  chip.setAngularVelocity(0);
+  // Welded again, so it is carried by its card and collides with nothing —
+  // exactly what it was built as. Without this it keeps the loose (or lit) mask
+  // it was given when it was snapped off, and a chip back on its card shoulders
+  // the chrome and its neighbours around.
+  for (let f = chip.getFixtureList(); f; f = f.getNext()) {
+    f.setFilterData({
+      groupIndex: 0,
+      categoryBits: CAT_PHANTOM,
+      maskBits: 0,
+    });
+  }
+  chip.setAwake(true);
+  s.broken = false;
+  s.joint = s.remake ? s.remake() : null;
+}
+
+/**
+ * Every chip that has been snapped off, back on its card.
+ *
+ * Driven by the world rather than by whoever did the snapping: a chain rebuilds
+ * its `snapped` set from nothing on every mount, so once it has been unmounted
+ * (boring mode) or torn down (parked on /projects) nobody is left who knows a
+ * chip is loose — and the rod that was hidden while it was comes back drawn from
+ * the card all the way out to wherever it had fallen.
+ */
+export function restoreChips(world: World): void {
+  if (!world.rest.length) return;
+  const damp = dampingCoeff(world.damping);
+  let moved = false;
+  for (const s of world.sticks) {
+    if (!s.broken) continue;
+    restoreChip(world, s, damp);
+    moved = true;
+  }
+  // The caller renders before it steps, and a chip that was just teleported home
+  // is still cached at the far end of its rod until the points are refreshed.
+  if (moved) sync(world);
+}
+
 // --- solid chrome ------------------------------------------------------------
 
 /**
@@ -940,11 +1017,10 @@ export function reset(world: World): void {
     b.setAngularVelocity(0);
     b.setAwake(true);
   });
-  for (const s of world.sticks) {
-    if (!s.broken) continue;
-    s.broken = false;
-    s.joint = s.remake ? s.remake() : null;
-  }
+  // The bodies are already home, so this only has to re-weld — but it is the
+  // same routine either way, and it is the only place that puts a snapped chip's
+  // collision filter back.
+  restoreChips(world);
   for (const p of world.points) p.held = false;
   sync(world);
 }
