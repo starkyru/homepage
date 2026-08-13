@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Read [MEMORY.md](MEMORY.md) too. This file documents **how** the code works; that one records **what was decided and why** — including what was deliberately left out of the published wiki, and which files must never be hand-edited. It is written for any agent, not just Claude Code.
+
 ## Project Overview
 
 Personal portfolio website for Ilia Dzhiubanskii (ilia.to). Built with Next.js 16 App Router, React 19, TypeScript 5, and Tailwind CSS.
@@ -19,6 +21,7 @@ pnpm test             # Run all Jest tests
 pnpm test:watch       # Jest in watch mode
 pnpm format           # Prettier format all files
 pnpm format:check     # Prettier check (used in CI)
+pnpm wiki             # Recompile content/wiki → src/data/wiki.generated.json
 ```
 
 Run a single test: `pnpm jest src/__tests__/path/to/test.tsx`
@@ -27,8 +30,9 @@ Run a single test: `pnpm jest src/__tests__/path/to/test.tsx`
 
 - **`src/app/`** — Next.js App Router: pages, layouts, API routes. `/` and `/projects` are structured data only; their view is `SiteShell`, mounted once in the root layout (see below).
 - **`src/components/`** — Reusable UI components. `home/` holds the hanging-chain homepage (physics, scene assembly, and the content model). `physics.ts` wraps Planck (Box2D); `model.ts` builds the desktop and mobile scenes from it. `projects/` holds the projects list and its column.
-- **`src/data/`** — Generated content. `resume.json` is written by `scripts/parse-resume.mjs`; `tech-logos.json` maps technology labels to Simple Icons slugs.
-- **`src/lib/`** — Utilities: `cn()` (clsx + tailwind-merge), `logger()` (dev-only), `og()` (Open Graph URLs).
+- **`src/data/`** — Generated content. `resume.json` is written by `scripts/parse-resume.mjs`; `wiki.generated.json` and `projects.generated.json` by `scripts/build-wiki.mjs`; `tech-logos.json` maps technology labels to Simple Icons slugs.
+- **`content/wiki/`** — The projects wiki, in Markdown. The editable source of truth for everything the chat knows about personal projects (see below).
+- **`src/lib/`** — Utilities: `cn()` (clsx + tailwind-merge), `logger()` (dev-only), `og()` (Open Graph URLs). `wiki/` holds the compiled corpus and its retrieval.
 - **`src/constant/`** — Site config (`siteConfig` with title, description, url) and environment flags.
 - **`src/styles/`** — `globals.css` (base styles, typography) and `colors.css` (CSS custom properties for color palette).
 
@@ -44,6 +48,70 @@ Two optional per-job lines in the doc are read when present, and derived when ab
 - `Tech: <comma-separated>` → the card's chips. Falls back to keyword-matching the job copy.
 
 A technology with no entry in `tech-logos.json` still renders — as a text disc in the stack ball, and as a text chip on cards. To give it a logo, add a Simple Icons slug there and run `pnpm logos`.
+
+## Projects Wiki
+
+`content/wiki/` is the public-safe technical memory the chat answers from: one
+Markdown page per project under `projects/`, an `index.md` that routes between
+them, and `technologies.md` as a reverse index. The Markdown is the source of
+truth. `scripts/build-wiki.mjs` (run by `pnpm wiki` and by `prebuild`) parses the
+front matter and sections into `src/data/wiki.generated.json` — a deployment
+artifact, never hand-edited. `README.md` and `homepage-integration.md` are owner
+documentation and are deliberately left out of the compiled corpus.
+
+The compiled record carries what retrieval scores on: `title`, `aliases`,
+`category`, `status`, a flattened `technologies` list, and the whole `body`.
+
+- **A trailing version is stripped from a technology name** ("Next.js 15" →
+  "Next.js"). Matching is substring-with-boundaries, so the shorter name still
+  matches a visitor who spells out the version — the reverse is not true, and
+  "Vue" missing "Vue 3" is the bug this prevents.
+- **`indexRank` is the position in `index.md`** — the owner's own ordering,
+  products first. It breaks score ties, so a tie lands on the more substantial
+  project rather than on whichever slug happens to sort first.
+- Ranking is exact name/technology matching over the 23 pages, in
+  `lib/wiki/retrieval.ts`. It is auditable and costs nothing per request; an
+  embedding index is not worth its complexity until the corpus is much larger.
+
+### The wiki also generates `/projects`
+
+The same build writes `src/data/projects.generated.json` — the grouped card list
+`src/components/projects/sections.ts` re-exports. That list was hand-kept and
+fell nine projects behind the corpus the chat answers from, which is the drift
+one source removes. **Edit the Markdown, then run `pnpm wiki`.**
+
+- Cards come from five optional front-matter fields — `card:` (the blurb, in the
+  page's own voice rather than the wiki's formal register), `tools:` (the curated
+  line under it), `repo:` (a slug under `github.com/starkyru`), `private: true`,
+  `beta: true` — plus the existing `public_url:`. `beta` sits _next to_ Live
+  rather than replacing it, and is dashed: public and usable, not finished.
+  `card:` falls back to the page's one-liner in
+  `index.md` and `tools:` to the first 12 entries of its technology list; the
+  script warns which pages fell back, exactly as the resume parser does.
+- **Grouping and order come from `index.md`**, so the page cannot hold an
+  ordering the index disagrees with. `SECTION_TITLES` in the build script maps
+  its headings onto the page's — two of them (tools, libraries) deliberately land
+  on one. A page the index does not link cannot be placed and is left off the
+  page with a warning.
+- Two artifacts, not one: `projects.generated.json` reaches the browser (the
+  showcase is a client component) and carries no page bodies. The corpus is
+  ~100 KB of prose the column has no use for. Presentation fields stay out of
+  `wiki.generated.json` for the same reason in reverse.
+
+`lib/wiki/context.ts` assembles the prompt: `wikiOverview` (index + technology
+index + a roster of every page) is constant and sits in the static system
+prompt where a provider prefix cache can reuse it, and only the retrieved pages
+vary per question.
+
+**The question selects trusted pages; it never becomes one.** Visitor text is
+scored against the corpus and nothing else — it cannot add, alter, or reach past
+the pages, and the retrieved pages are sent as a separate trusted message. Which
+pages were used comes back to the browser as `sources` and is shown under the
+answer, so a claim can be checked against the page behind it.
+
+`/llms.txt` summarises the wiki (one line per project) and `/llms-full.txt`
+serves the whole corpus, both compiled from the same artifact, so neither can
+disagree with what the chat is grounded in.
 
 ## The Shell (`/` ↔ `/projects`)
 
@@ -223,3 +291,25 @@ GitHub Actions (`lint.yml`) runs on push to main and all PRs: `lint:strict` → 
 ## Environment
 
 Node 20 (`.nvmrc`; `package.json` requires >=20.9.0). `NEXT_PUBLIC_SHOW_LOGGER` controls dev logger visibility.
+
+## Design Context
+
+### Users
+
+Recruiters, hiring managers, and technical peers evaluating Ilia Dzhiubanskii for senior frontend and full-stack engineering roles. They need quick, credible answers about relevant experience, projects, and technology depth.
+
+### Brand Personality
+
+Direct, pragmatic, and technically credible. The experience should communicate confidence and clarity without marketing fluff.
+
+### Aesthetic Direction
+
+Retain the portfolio's dark, amber-accented hanging-chain visual language. Supporting interfaces should be focused and restrained, prioritizing readable information and clear state over decorative effects.
+
+### Design Principles
+
+1. Make recruiter-relevant evidence easy to scan and verify.
+2. Use concise, plain language over promotional claims.
+3. Preserve the site's dark amber visual identity without competing with the portfolio content.
+4. Keep interactions keyboard-accessible, responsive, and respectful of reduced-motion preferences.
+5. Surface feature availability and errors honestly and clearly.
