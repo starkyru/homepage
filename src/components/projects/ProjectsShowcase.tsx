@@ -77,6 +77,7 @@ export default function ProjectsShowcase() {
                       Live
                     </a>
                   )}
+                  {project.beta && <span style={badgeBeta}>Beta</span>}
                 </div>
                 <p style={cardDesc}>{project.description}</p>
                 <p style={cardTools}>
@@ -185,4 +186,12 @@ const badgeLive: CSSProperties = {
   background: palette.amber,
   color: '#1a1408',
   fontWeight: 600,
+};
+
+// Dashed, and next to Live rather than instead of it: these are usable and
+// public, they are just not finished. Solid amber is reserved for "go here".
+const badgeBeta: CSSProperties = {
+  ...badgeBase,
+  border: '1px dashed rgba(224,164,88,.45)',
+  color: 'rgba(224,164,88,.85)',
 };
