@@ -66,7 +66,17 @@ export function createHudSolids(world: World, stage: HTMLElement): HudSolids {
       }
 
       for (const [el, solid] of tracked) {
-        if (!live.has(el)) idleSolid(solid);
+        if (live.has(el)) continue;
+        // Switched off (data-solid="off") but still on the page — it will be
+        // back, so keep the body and stop colliding with it. Gone from the DOM
+        // is different: a strong Map would pin the detached node *and* its body
+        // in the world, which outlives this hook.
+        if (el.isConnected) {
+          idleSolid(solid);
+          continue;
+        }
+        destroySolid(world, solid);
+        tracked.delete(el);
       }
       // Whatever is lying on a panel that just moved has to be re-solved, and a
       // sleeping chip would be left standing in mid-air — or inside the panel.
