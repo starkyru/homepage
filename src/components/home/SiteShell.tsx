@@ -16,6 +16,8 @@ import { homeFontVars } from '@/lib/fonts';
 
 import ProjectsShowcase from '@/components/projects/ProjectsShowcase';
 
+import { resumePdfUrl } from '@/constant/resume';
+
 import IdentityPanel, { btnOutline, btnPrimary } from './IdentityPanel';
 import {
   buildMobileScene,
@@ -30,9 +32,6 @@ import { reset as resetWorld } from './physics';
 import SkillChain from './SkillChain';
 import SkillChainMobile from './SkillChainMobile';
 import StaticShowcase from './StaticShowcase';
-
-const RESUME_PDF =
-  'https://docs.google.com/document/d/1FozMEumbKlGOmrFjOYAsLtrpIC0WKh1Y/export?format=pdf';
 
 const MIN_PHYSICS_WIDTH = 900;
 
@@ -466,7 +465,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
                   Projects
                 </Link>
                 <a
-                  href={RESUME_PDF}
+                  href={resumePdfUrl}
                   className='chain-btn chain-btn--outline'
                   style={{ ...btnOutline, ...headerBtn }}
                 >

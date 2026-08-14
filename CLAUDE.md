@@ -40,7 +40,11 @@ Run a single test: `pnpm jest src/__tests__/path/to/test.tsx`
 
 The Google Doc is the single source of truth for homepage content. `pnpm update:resume` fetches its HTML export, parses it to `src/data/resume.json`, and downloads any missing tech logos. **Never hand-edit `resume.json`** — it is overwritten on every run.
 
-`src/components/home/model.ts` derives `SKILLS`, `EXPERIENCE`, `CHIPS`, `SOCIALS`, and `INTRO` from that JSON. Google regenerates its CSS class names on every export, so the parser keys off structure and text (ALL-CAPS section headings; within experience, a date line anchors each job, with the role above it and the company below).
+`src/components/home/model.ts` derives `SKILLS`, `EXPERIENCE`, `CHIPS`, `SOCIALS`, and `INTRO` from that JSON. Google regenerates its CSS class names on every export, so the parser keys off structure and text (ALL-CAPS section headings; within experience, a `<company>, <location> | <dates>` line anchors each job, with the role on the line above it). The header's contact details are pipe-separated fields classified by shape — email, phone, bare domain, otherwise the location — because the doc writes them as plain text rather than as hyperlinks.
+
+The doc names no employer sites, so `COMPANY_URL` in the parser holds the links the cards show; a hyperlink in the doc still wins over it. A run reports every company with neither, rather than deriving a domain from the company name — that lands on whoever owns it today, not on the former employer. A run also fails outright if a section parses to nothing, since the output is committed and a silent empty parse would ship.
+
+The PDF download link is not written out anywhere: `src/constant/resume.ts` derives it from the `source` URL the parser recorded, so the download and the page always come from the same doc. Moving to a new doc is a one-line change to `DOC_ID`.
 
 Two optional per-job lines in the doc are read when present, and derived when absent (the script warns which jobs fell back):
 

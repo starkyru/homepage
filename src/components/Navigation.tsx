@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation';
 
 import PdfIcon from '@/components/PdfIcon';
 
+import { resumePdfUrl } from '@/constant/resume';
+
 const links = [
   { href: '/', label: 'Home' },
   { href: '/projects', label: 'My Projects' },
@@ -71,7 +73,7 @@ export default function Navigation() {
         );
       })}
       <a
-        href='https://docs.google.com/document/d/1FozMEumbKlGOmrFjOYAsLtrpIC0WKh1Y/export?format=pdf'
+        href={resumePdfUrl}
         title='Download resume as PDF'
         className='ml-1 rounded-lg p-1 text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
       >

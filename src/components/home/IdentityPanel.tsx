@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
 
+import { resumePdfUrl } from '@/constant/resume';
+
 import { INTRO, palette, SOCIALS } from './model';
 
 const serif = 'var(--font-newsreader), Georgia, serif';
@@ -134,7 +136,7 @@ export default function IdentityPanel({
             {onProjects ? '← Back to the chain' : 'Projects'}
           </Link>
           <a
-            href='https://docs.google.com/document/d/1FozMEumbKlGOmrFjOYAsLtrpIC0WKh1Y/export?format=pdf'
+            href={resumePdfUrl}
             className='chain-btn chain-btn--outline'
             style={btnOutline}
           >

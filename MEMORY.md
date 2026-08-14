@@ -25,6 +25,43 @@ build.
 
 ## Decisions
 
+### 2026-08-13 — the resume comes from a new Google Doc, laid out differently
+
+The source doc moved to `1oxn2bRkMuQwXhhtCsQjGh1nOx8IgZ9ME9H8p7iNnJrM`. It is a
+rewrite, not a copy, and three things about its shape broke the parser rather
+than merely changing the content:
+
+- **Company and dates share one line** (`Overtone.art, Charlotte, NC | 03/2026 –
+Present`) where the old doc put the dates on their own line between the role
+  and the company. The job anchor is that combined line now.
+- **It contains no hyperlinks at all.** The contact details and the employer
+  sites used to be `<a>` tags; they are plain text, or absent. Hence the bare
+  domains being given a scheme in `parseHeader`, and `COMPANY_URL` in the
+  parser holding the four employer links the cards used to get from the doc.
+  Those four came from the old doc's own hyperlinks — they are not guesses.
+  **Do not derive an employer URL from a company name.** Centralex and LIX are
+  named as `.com` domains and would resolve to whoever owns those today.
+- **Education is one line**, `<field> — <school>`, and no longer carries years.
+  `education[].years` is now empty, and the static resume prints no dates there.
+
+The doc still has no `Summary:` or `Tech:` lines, so every card's one-liner and
+every chip is derived — the run says so, and that is the state it has always
+been in, not a regression from the move.
+
+Its TECHNICAL SKILLS section is much longer than the old one (57 entries, up
+from 30) and prose-ier: "schema design", "code review", "npm package
+publishing". Everything in it becomes a disc in the stack ball and is eligible
+to become a card chip, so a few cards now carry a chip like "migrations". The
+ball absorbs the count — nothing overflows it — but trimming that section, or
+adding `Tech:` lines to the doc, is the lever if the chips read badly. The lever
+is in the doc, not in the parser: filtering the doc's own skills list in code
+would mean the site quietly disagrees with the PDF a recruiter downloads.
+
+`siteConfig.tagline` ("Senior Frontend & Full-Stack Engineer") is hand-written
+and no longer matches the doc's title ("Senior Full-Stack Software Engineer").
+It was left alone deliberately — it is the SEO description, not resume content —
+but the two should not drift much further apart.
+
 ### 2026-08-13 — the projects wiki lives in this repo and is published
 
 `~/projects/projects-wiki` was moved in as `content/wiki/`, rather than kept as a
