@@ -58,7 +58,6 @@
       "category": "Frontend",
       "items": [
         "React",
-        "React 19",
         "Next.js",
         "React Native",
         "Expo",
@@ -105,7 +104,7 @@
       "items": [
         "LLM integration",
         "Anthropic Claude API",
-        "Model Context Protocol (MCP)",
+        "MCP",
         "AI-assisted development workflows (Claude Code, Codex, GitHub Copilot)"
       ]
     }
@@ -122,18 +121,17 @@
       "url": "https://overtone.art",
       "short": "Designed and built a full-stack e-commerce platform end-to-end: NestJS REST API, PostgreSQL schema and migrations, Redis caching,…",
       "tech": [
-        "Model Context Protocol (MCP)",
         "React Native",
         "TypeScript",
         "PostgreSQL",
         "migrations",
         "Turborepo",
-        "React 19",
         "Next.js",
         "NestJS",
         "Stripe",
         "Redis",
-        "React"
+        "React",
+        "MCP"
       ],
       "description": "",
       "bullets": [

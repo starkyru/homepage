@@ -108,6 +108,32 @@ export function techLogo(label: string): string | null {
   return slug ? `/logos/${slug}.svg` : null;
 }
 
+/**
+ * A technology with no logo rides as text, and there is only room for a few
+ * characters of it (`StackBallDisc` abbreviates, a chip is a 40px disc). The
+ * short names survive that — "SQL", "Vite", "MCP" — while the long ones come
+ * out as "migr" and "Dock", which name nothing. So a label too long to read is
+ * left out of the scene rather than rendered as a stub.
+ *
+ * **This hides a disc, not a skill.** `SKILLS` and `CHIPS` stay whole: the
+ * static resume prints every one in full, and so do `/llms.txt` and the JSON-LD
+ * (which read `resume.json` directly). The rule is about what fits in a circle.
+ *
+ * A chip gets one more character than a disc because it carries no logo more
+ * often and sits on a card, where a slightly wider label still reads.
+ */
+const DISC_LABEL_MAX = 4;
+const CHIP_LABEL_MAX = 5;
+
+function legible(label: string, max: number): boolean {
+  return techLogo(label) !== null || label.length <= max;
+}
+
+/** The technologies the stack ball can show as a logo or a readable word. */
+export const BALL_SKILLS: Skill[] = SKILLS.filter((s) =>
+  legible(s.label, DISC_LABEL_MAX),
+);
+
 /** Infers a display label for the doc's bare contact URLs. */
 function socialLabel(href: string): string | null {
   if (href.includes('github.com')) return 'GitHub';
@@ -301,7 +327,7 @@ export function buildScene(vh: number, vw: number): Scene {
   ropeSticks.push(link(world, tbPrev, ball.point));
   const techBall: TechBallView = {
     id: 'techball',
-    labels: SKILLS.map((s) => s.label),
+    labels: BALL_SKILLS.map((s) => s.label),
     r: TECH_R,
     point: ball.point,
   };
@@ -393,7 +419,9 @@ export function buildScene(vh: number, vw: number): Scene {
   const TOP_MARGIN = 48; // keep chips off the top edge (the rope)
   const CORNER = 40; // keep chips off the rounded corners
   const byCard: number[][] = cards.map(() => []);
-  CHIPS.forEach((ch, gi) => byCard[ch.card].push(gi));
+  CHIPS.forEach((ch, gi) => {
+    if (legible(ch.label, CHIP_LABEL_MAX)) byCard[ch.card].push(gi);
+  });
   byCard.forEach((list, ci) => {
     const card = cards[ci];
     const pv = world.points[card.point];
@@ -632,7 +660,9 @@ export function buildMobileScene(vw: number): MobileScene {
 
   // group the tech chips by experience (same mapping the desktop uses)
   const byBox: number[][] = EXPERIENCE.map(() => []);
-  CHIPS.forEach((ch, gi) => byBox[ch.card].push(gi));
+  CHIPS.forEach((ch, gi) => {
+    if (legible(ch.label, CHIP_LABEL_MAX)) byBox[ch.card].push(gi);
+  });
 
   // The strand's height is only known once every box is laid out, and the world
   // needs it up front for the ground plane — so measure the run first.
@@ -675,7 +705,7 @@ export function buildMobileScene(vw: number): MobileScene {
   }).point;
   const techBall: TechBallView = {
     id: 'techball',
-    labels: SKILLS.map((s) => s.label),
+    labels: BALL_SKILLS.map((s) => s.label),
     r: ballR,
     point: ballPoint,
   };

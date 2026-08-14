@@ -77,6 +77,18 @@ const COMPANY_URL = {
   Ankr: 'http://ankr.com',
 };
 
+/**
+ * Display names for technologies whose doc spelling isn't what the site shows.
+ * The doc writes a pinned version and a protocol's full name; a stack-ball disc
+ * and a card chip have room for neither, and "React 19" alongside "React" is
+ * the same technology listed twice. Renaming here rather than in the view keeps
+ * the JSON, the static resume and `/llms.txt` saying one thing.
+ */
+const SKILL_DISPLAY = {
+  'React 19': 'React',
+  'Model Context Protocol (MCP)': 'MCP',
+};
+
 // ---------------------------------------------------------------------------
 // HTML → ordered blocks
 // ---------------------------------------------------------------------------
@@ -220,6 +232,12 @@ function splitList(s) {
   return out.filter(Boolean);
 }
 
+/** A technology list, renamed to the site's spelling and de-duplicated. */
+function skillList(s) {
+  const named = splitList(s).map((t) => SKILL_DISPLAY[t] ?? t);
+  return named.filter((t, i) => named.indexOf(t) === i);
+}
+
 /**
  * Technologies that only ever appear inside job copy, never in the doc's
  * TECHNICAL SKILLS section. Used with the skills vocabulary to guess a job's
@@ -333,7 +351,7 @@ function parseSkills(blocks) {
     const colon = b.text.indexOf(':');
     if (colon === -1) continue;
     const category = b.text.slice(0, colon).trim();
-    const items = splitList(b.text.slice(colon + 1));
+    const items = skillList(b.text.slice(colon + 1));
     if (category && items.length) out.push({ category, items });
   }
   return out;
@@ -402,7 +420,7 @@ function parseExperience(blocks) {
       }
       const t = takeLabelled(b.text, 'Tech');
       if (t !== null) {
-        tech = splitList(t);
+        tech = skillList(t);
         continue;
       }
       lead.push(b.text);

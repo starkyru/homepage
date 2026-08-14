@@ -48,19 +48,44 @@ The doc still has no `Summary:` or `Tech:` lines, so every card's one-liner and
 every chip is derived — the run says so, and that is the state it has always
 been in, not a regression from the move.
 
-Its TECHNICAL SKILLS section is much longer than the old one (57 entries, up
-from 30) and prose-ier: "schema design", "code review", "npm package
-publishing". Everything in it becomes a disc in the stack ball and is eligible
-to become a card chip, so a few cards now carry a chip like "migrations". The
-ball absorbs the count — nothing overflows it — but trimming that section, or
-adding `Tech:` lines to the doc, is the lever if the chips read badly. The lever
-is in the doc, not in the parser: filtering the doc's own skills list in code
-would mean the site quietly disagrees with the PDF a recruiter downloads.
-
 `siteConfig.tagline` ("Senior Frontend & Full-Stack Engineer") is hand-written
 and no longer matches the doc's title ("Senior Full-Stack Software Engineer").
 It was left alone deliberately — it is the SEO description, not resume content —
 but the two should not drift much further apart.
+
+### 2026-08-13 — the scene shows what fits in a circle; the resume shows everything
+
+The new doc's TECHNICAL SKILLS section is much longer than the old one (56
+entries, up from 30) and prose-ier: "schema design", "code review", "npm package
+publishing", "end-to-end testing". Every entry becomes a disc in the stack ball
+and is eligible to become a card chip, and a disc has room for a logo or about
+four characters — `StackBallDisc.abbreviate` was rendering "migrations" as
+"migr" and "Docker" as "Dock", which name nothing.
+
+So `model.ts` keeps a disc or chip only if the label **has a logo, or is short
+enough to read whole** (4 characters for a disc, 5 for a chip). Sixteen prose
+entries drop out of the scene; one text disc is left, "SQL".
+
+**This hides a disc, not a skill, and the distinction is the point.** `SKILLS`
+and `CHIPS` stay whole — the static resume prints all 56 in full, and `/llms.txt`
+and the JSON-LD read `resume.json` directly, so nothing a recruiter or an agent
+reads disagrees with the PDF. Do not "tidy up" by filtering at the parser; that
+is where the site would start lying about the doc.
+
+Two renames do belong in the parser, in `SKILL_DISPLAY`, because they are the
+same technology under a longer name rather than a different one: `React 19` →
+`React` (the doc lists both, so it deduplicates) and
+`Model Context Protocol (MCP)` → `MCP`.
+
+The other lever is `tech-logos.json`. A label with a logo is kept whatever its
+length, so mapping one is how a long name earns its disc back. Eighteen entries
+were added for the new doc's spellings — `Node.js`, `Tailwind CSS`, `Docker`,
+`Redis`, `MySQL`, `Prisma`, `TypeORM`, `Express`, `Vitest`, `Prettier`,
+`Turborepo`, `shadcn/ui`, `TanStack Query` and four aliases of names already
+mapped. Several only lacked a logo because the new doc spells them differently
+than the old one did (`Node` → `Node.js`, `Tailwind` → `Tailwind CSS`), which is
+the failure mode to check first when a familiar technology loses its disc.
+`Zustand`, `WebSockets` and `REST APIs` have no Simple Icons entry and stay out.
 
 ### 2026-08-13 — the projects wiki lives in this repo and is published
 
