@@ -98,7 +98,10 @@ export default function PortfolioChat() {
     // the right offset is the HUD's own 40px padding, so the two stack flush.
     // Keyed to the width the physics view starts at (MIN_PHYSICS_WIDTH in
     // SiteShell) — below that there is no arrow to clear or line up with.
-    <div className='fixed bottom-4 right-4 z-[60] font-primary sm:bottom-6 sm:right-6 min-[900px]:bottom-[100px] min-[900px]:right-10'>
+    // Under that width the bottom accordion nav is the thing to clear instead:
+    // 4.5rem is its height (MOBILE_NAV_H in home/model.ts), so the launcher sits
+    // directly on top of the bar rather than over its buttons.
+    <div className='fixed bottom-[4.5rem] right-2 z-[60] font-primary min-[900px]:bottom-[100px] min-[900px]:right-10'>
       {open && enabled && (
         <div
           ref={dialogRef}
@@ -106,11 +109,11 @@ export default function PortfolioChat() {
           aria-modal='true'
           aria-labelledby='portfolio-chat-title'
           // The height cap is what keeps the panel off the top of the screen, so
-          // it has to give back whatever the launcher's offset takes: 7rem is
-          // that offset plus the launcher, this panel's gap and a margin at the
-          // top; 11.75rem is the same sum once the launcher rises to clear the
-          // HUD arrow.
-          className='mb-3 flex h-[min(620px,calc(100dvh-7rem))] w-[calc(100vw-2rem)] max-w-[430px] flex-col overflow-hidden rounded-xl border border-amber-200/25 bg-[#16120d] text-[#ece7dd] shadow-2xl shadow-black/50 min-[900px]:h-[min(620px,calc(100dvh-11.75rem))]'
+          // it has to give back whatever the launcher's offset takes: 10.5rem is
+          // that offset (4.5rem, clearing the accordion bar) plus the launcher,
+          // this panel's gap and a margin at the top; 11.75rem is the same sum
+          // once the launcher rises to clear the HUD arrow.
+          className='mb-3 flex h-[min(620px,calc(100dvh-10.5rem))] w-[calc(100vw-2rem)] max-w-[430px] flex-col overflow-hidden rounded-xl border border-amber-200/25 bg-[#16120d] text-[#ece7dd] shadow-2xl shadow-black/50 min-[900px]:h-[min(620px,calc(100dvh-11.75rem))]'
         >
           <header className='flex items-center justify-between border-b border-amber-100/15 px-4 py-3'>
             <div>
