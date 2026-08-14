@@ -32,7 +32,7 @@ Run a single test: `pnpm jest src/__tests__/path/to/test.tsx`
 - **`src/components/`** — Reusable UI components. `home/` holds the hanging-chain homepage (physics, scene assembly, and the content model). `physics.ts` wraps Planck (Box2D); `model.ts` builds the desktop and mobile scenes from it. `projects/` holds the projects list and its column.
 - **`src/data/`** — Generated content. `resume.json` is written by `scripts/parse-resume.mjs`; `wiki.generated.json` and `projects.generated.json` by `scripts/build-wiki.mjs`; `tech-logos.json` maps technology labels to Simple Icons slugs.
 - **`content/wiki/`** — The projects wiki, in Markdown. The editable source of truth for everything the chat knows about personal projects (see below).
-- **`src/lib/`** — Utilities: `cn()` (clsx + tailwind-merge), `logger()` (dev-only), `og()` (Open Graph URLs). `wiki/` holds the compiled corpus and its retrieval.
+- **`src/lib/`** — Utilities: `cn()` (clsx + tailwind-merge), `logger()` (dev-only), `og()` (Open Graph URLs). `wiki/` holds the compiled corpus and its retrieval. `accordion-signal.ts` is a tiny external store (`useSyncExternalStore`) telling the chat launcher when the chain's accordion is up, so the launcher can collapse to its icon — the two sit in different subtrees (root layout vs. deep inside the chain) and nothing in the chain re-renders when it changes.
 - **`src/constant/`** — Site config (`siteConfig` with title, description, url) and environment flags.
 - **`src/styles/`** — `globals.css` (base styles, typography) and `colors.css` (CSS custom properties for color palette).
 

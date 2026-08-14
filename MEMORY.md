@@ -23,6 +23,12 @@ Delete an entry when it stops being true; do not leave a stale one behind.
 Editing either by hand looks like it works and is silently reverted by the next
 build.
 
+`prebuild` writes the two wiki artifacts raw, while `pnpm wiki` runs Prettier
+over them afterwards — so the committed copies are formatted and a plain
+`pnpm build` always leaves them dirty with nothing but whitespace. That diff is
+build noise, not a content change: `git checkout --` it rather than committing
+it, or re-run `pnpm wiki` to get the formatted copy back.
+
 ## Decisions
 
 ### 2026-08-13 — the resume comes from a new Google Doc, laid out differently

@@ -1,8 +1,20 @@
 'use client';
 
 import { MessageCircle, Send, X } from 'lucide-react';
-import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
+import {
+  FormEvent,
+  KeyboardEvent,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 
+import {
+  accordionIsOpen,
+  accordionIsOpenOnServer,
+  subscribeAccordion,
+} from '@/lib/accordion-signal';
 import type { WikiCitation } from '@/lib/wiki/types';
 
 import ChatMessage, { ChatMessageData } from '@/components/ChatMessage';
@@ -24,6 +36,16 @@ export default function PortfolioChat() {
   const [error, setError] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  // The chain's accordion opens into the same corner. While it is up the
+  // launcher gives the room back: the label slides shut against the icon, which
+  // is pinned to the right, so the pill shrinks rightward into a disc. Its own
+  // panel being open outranks that — there is nothing left to make room for.
+  const accordionUp = useSyncExternalStore(
+    subscribeAccordion,
+    accordionIsOpen,
+    accordionIsOpenOnServer,
+  );
+  const collapsed = accordionUp && !open;
 
   useEffect(() => {
     fetch('/api/chat/status')
@@ -188,13 +210,30 @@ export default function PortfolioChat() {
         onClick={() => enabled && setOpen((current) => !current)}
         disabled={!enabled}
         title={enabled ? 'Ask about Ilia' : 'Portfolio chat is not configured'}
-        className='group inline-flex items-center gap-2 rounded-full border border-amber-100/25 bg-[#16120d] px-4 py-3 text-sm font-semibold text-[#f5d59a] shadow-lg shadow-black/35 transition hover:border-[#e0a458] hover:bg-[#211a12] disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e0a458] focus-visible:ring-offset-2 focus-visible:ring-offset-[#100e0b]'
+        className='chat-launcher group inline-flex items-center rounded-full border border-amber-100/25 bg-[#16120d] py-3 text-sm font-semibold text-[#f5d59a] shadow-lg shadow-black/35 hover:border-[#e0a458] hover:bg-[#211a12] disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e0a458] focus-visible:ring-offset-2 focus-visible:ring-offset-[#100e0b]'
+        // Horizontal padding closes with the label so what is left is a disc
+        // around the icon, not a stadium with a gap where the words were.
+        style={{ paddingLeft: collapsed ? 12 : 16, paddingRight: 12 }}
         aria-label={
           enabled ? 'Open portfolio chat' : 'Portfolio chat is not configured'
         }
       >
         <MessageCircle size={19} aria-hidden='true' />
-        <span className='hidden sm:inline'>Ask about Ilia</span>
+        {/* `hidden sm:inline-block` is the breakpoint rule this always had —
+            below sm the launcher is icon-only and there is nothing to collapse.
+            The width and the gap are what animate, so both are inline: max-width
+            because a span has no width to transition from, and margin because a
+            flex `gap` would hold the space open at zero width. */}
+        <span
+          className='chat-launcher__label hidden sm:inline-block'
+          style={{
+            maxWidth: collapsed ? 0 : '9rem',
+            marginLeft: collapsed ? 0 : 8,
+            opacity: collapsed ? 0 : 1,
+          }}
+        >
+          Ask about Ilia
+        </span>
       </button>
     </div>
   );

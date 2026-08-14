@@ -9,6 +9,8 @@ import {
 } from 'react';
 import { FiChevronLeft, FiChevronRight, FiChevronUp } from 'react-icons/fi';
 
+import { setAccordionOpen } from '@/lib/accordion-signal';
+
 import type { Scene } from './model';
 import { ANCHOR_Y, EXPERIENCE, palette, PANEL_W, techLogo } from './model';
 import { dropFrom, lean, payOut } from './physics';
@@ -352,6 +354,16 @@ export default function SkillChain({
   // (wheel or arrows) re-opens the panel on the newly centred experience.
   const keepOpenRef = useRef(false);
   const reExpandTimer = useRef<number | null>(null);
+
+  // The chat launcher sits in this corner and collapses to its icon while the
+  // panel is open. Reported rather than lifted into state — nothing here needs
+  // to re-render, and the launcher is mounted in the root layout, not in the
+  // chain. `busy` is what keeps a parked or mid-transition chain from claiming
+  // an accordion the visitor cannot see: on /projects this stays mounted.
+  useEffect(() => {
+    setAccordionOpen('chain', expanded && panelUp && !busy);
+    return () => setAccordionOpen('chain', false);
+  }, [expanded, panelUp, busy]);
 
   const nearestJob = useCallback(() => {
     const el = scrollRef.current;

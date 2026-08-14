@@ -236,6 +236,37 @@ html.dark {
     outline-offset: 3px;
   }
 
+  /*
+   * Chat launcher, which collapses to its icon while the chain's accordion is
+   * up (see lib/accordion-signal.ts). The values that change are inline on the
+   * element — inline wins the cascade, so only the timing lives here.
+   *
+   * The label's width animates as max-width: a span has no width of its own to
+   * transition from, and a fixed width would clip the text at another font size.
+   * 9rem is comfortably over "Ask about Ilia" at this weight, so the open state
+   * is still the text's natural width — the cap only has to beat it.
+   */
+  .chat-launcher__label {
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .chat-launcher {
+      transition:
+        padding 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 0.18s ease,
+        background-color 0.18s ease;
+    }
+
+    .chat-launcher__label {
+      transition:
+        max-width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+        margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.18s ease;
+    }
+  }
+
   /* Hover is gated on a real pointer: two of these live in the mobile header,
      where a tap would otherwise leave the hover state stuck on. */
   @media (hover: hover) {

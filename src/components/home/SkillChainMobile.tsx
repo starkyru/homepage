@@ -10,6 +10,8 @@ import {
 } from 'react';
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
+import { setAccordionOpen } from '@/lib/accordion-signal';
+
 import {
   EXPERIENCE,
   MOBILE_HEADER_H,
@@ -192,6 +194,14 @@ export default function SkillChainMobile({
   const reExpandTimer = useRef<number | null>(null);
   const swapTimer = useRef<number | null>(null);
   const animateTitleSwapRef = useRef(false);
+
+  // The chat launcher sits directly above this bar and collapses to its icon
+  // while the sheet is open. Reported rather than lifted into state — the
+  // launcher is mounted in the root layout, not inside the chain.
+  useEffect(() => {
+    setAccordionOpen('chain-mobile', expanded && panelUp);
+    return () => setAccordionOpen('chain-mobile', false);
+  }, [expanded, panelUp]);
 
   const nearestJob = useCallback(() => {
     const el = scrollRef.current;
