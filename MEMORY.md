@@ -215,3 +215,56 @@ sent. It never becomes part of the reference material, and the retrieved pages
 travel as a separate trusted message. Any change to the chat must preserve that
 boundary. The pages behind an answer come back as `sources` and are shown under
 it, so a claim can be checked.
+
+### 2026-08-21 — chat answers are scored in two tiers, and only one runs in CI
+
+`pnpm test` covers what is deterministic: a hand-labeled golden set for
+retrieval (`src/lib/__fixtures__/retrieval-goldens.ts`) scored on recall@3 and
+MRR, the screening rules, the request `answerQuestion` sends, and the route's
+status mapping. `pnpm eval` (`jest.eval.config.js`, `eval/`) is the live suite —
+real screen, real retrieval, real model call, then an LLM judge.
+
+The live suite is **deliberately outside CI**: CI holds no key, and every run
+costs money. Run it before shipping a change to `prompt.ts`, `retrieval.ts` or
+`content/wiki`.
+
+Three decisions worth keeping:
+
+- **The judge is same-vendor (`gpt-5.6-terra`) but constrained to entailment.**
+  It is handed the retrieved pages that were actually sent and asked whether
+  each claim appears in them — never whether the claim sounds right. A judge
+  invited to answer from memory rewards phrasing it recognises and shares the
+  answerer's blind spots. It runs at `temperature: 0` (dropped automatically if
+  the model rejects the parameter) because it is a measuring instrument, not the
+  system under test.
+- **The answerer is called with production parameters untouched.** No sampling
+  override: an eval that pins the subject grades a system nobody ships.
+  Variance is handled by `EVAL_REPEAT`, which keeps the worst attempt.
+- **Rejected: recorded answer fixtures.** A committed answer goes stale the
+  moment the prompt or corpus changes, and a stale fixture that still passes is
+  a false green. Also rejected: Promptfoo — less code, but a devDep, a second
+  config language, and an abstraction between the eval and `referenceFor`.
+
+### 2026-08-21 — two retrieval defects the golden set found, still open
+
+Both are recorded as `knownGap` cases running under `it.failing`, so closing
+either turns the suite red and forces the note to be removed with it.
+
+- **Compound technology entries are unreachable.** `mentions()` matches a
+  technology as a whole phrase, so a page listing `Drizzle ORM/Kit`, `Preact and
+Lit ReactiveElement` or `OpenTelemetry metrics and spans` never matches a
+  visitor naming just that technology. The fix belongs in
+  `scripts/build-wiki.mjs` (split an entry on `/` and `and`) or in the wiki
+  bullets themselves.
+- **A category hit elects a page on its own.** `WEIGHT.category` is 10 and
+  `MIN_SCORE` is 10, so one ordinary English word inside a category string is
+  enough — "What time does the London office **open**?" retrieves Countersign,
+  whose category is "open-source library and hosted product". Body overlap is
+  capped below `MIN_SCORE` precisely so it can only rank, never elect; category
+  was never given the same treatment.
+
+The injection guard had a third, since fixed: `\binstruction\b` does not match
+"instructions", so "ignore all previous instructions" passed the screen
+untouched. It over-blocks in the other direction too — "show", "print" and
+"prompt" are ordinary words — and those cases are recorded the same way in
+`src/app/api/chat/__tests__/screen.test.ts`.

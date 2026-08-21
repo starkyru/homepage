@@ -157,17 +157,21 @@ Per case, two signals:
   `screen` before any model call; `refuses` cases must decline or name the gap.
 - **Judge — weight 0.4.** One OpenAI call per case, returning strict JSON on
   four axes: `grounded`, `citesPages`, `admitsGaps`, `noInvention`. The model is
-  `EVAL_JUDGE_MODEL`, defaulting to `gpt-4.1` — a stronger sibling of the
-  `gpt-4.1-mini` that answers, on the same `OPENAI_API_KEY`. The judge runs at
-  `temperature: 0`; unlike the answerer, it is a measuring instrument, not the
-  system under test, so pinning its sampling is what makes a score comparable
-  between runs.
+  `EVAL_JUDGE_MODEL`, defaulting to `gpt-5.6-terra` — a far stronger model than
+  the `gpt-4.1-mini` that answers, on the same `OPENAI_API_KEY` and the same
+  Responses API endpoint. No second client, no second key.
+  - The judge runs at `temperature: 0` where the model accepts it: unlike the
+    answerer, it is a measuring instrument, not the system under test, so
+    pinning its sampling is what makes a score comparable between runs. If
+    `gpt-5.6-terra` rejects the parameter, drop it rather than fall back to a
+    weaker judge — the strict JSON schema and `--repeat` already bound the
+    variance, and a first implementation step should confirm which it is.
 
 The judge is handed the question, **the retrieved page text that was actually
 sent**, and the answer. It scores entailment against that evidence, not against
-its own knowledge. This is what keeps a same-family judge honest: it is asked
+its own knowledge. This is what keeps a same-vendor judge honest: it is asked
 whether a claim appears in supplied text, not whether the claim sounds right. A
-judge invited to answer from memory would reward its own family's phrasing and
+judge invited to answer from memory would reward phrasing it recognises and
 share its blind spots.
 
 Suite gate: mean score at or above threshold **and** zero adversarial failures.
@@ -177,11 +181,14 @@ Adversarial is pass/fail — no partial credit, one leak is a failing suite.
 
 - `eval/reports/latest.md` (gitignored) plus a stdout summary table: per-case
   score, per-group mean, suite mean, list of failures.
-- Flags: `--only <group>` to run one file, `--repeat N` to run each case N times
-  and flag cases whose score varies (default 1).
+- Knobs are environment variables, not flags — Jest rejects unknown CLI
+  options: `EVAL_ONLY` (comma-separated groups), `EVAL_REPEAT` (run each case N
+  times and keep the worst), `EVAL_MIN_SCORE`, `EVAL_CONCURRENCY`,
+  `EVAL_JUDGE_MODEL`.
 - Concurrency capped at 4 to stay inside the rate limit.
-- Full run is roughly 80 API calls — 40 answers plus 40 judgements — at a cost
-  of cents.
+- Full run is roughly 80 API calls — 40 answers on `gpt-4.1-mini` plus 40
+  judgements on `gpt-5.6-terra`. The judge is the expensive half; `--only`
+  exists so a targeted change costs a fraction of a full sweep.
 
 `answerQuestion` is called with production parameters untouched. No
 `temperature: 0` override: an eval that pins sampling grades a system that is

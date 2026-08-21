@@ -11,9 +11,9 @@
     "prebuild": "node scripts/build-wiki.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "lint:fix": "eslint src --fix && pnpm format",
-    "lint:strict": "eslint --max-warnings=0 src",
+    "lint": "next lint && eslint --max-warnings=0 eval",
+    "lint:fix": "eslint src eval --fix && pnpm format",
+    "lint:strict": "eslint --max-warnings=0 src eval",
     "typecheck": "tsc --noEmit --incremental false",
     "test:watch": "jest --watch",
     "test": "jest",
@@ -23,7 +23,8 @@
     "prepare": "husky",
     "logos": "node scripts/fetch-logos.mjs",
     "wiki": "node scripts/build-wiki.mjs && prettier -w src/data/wiki.generated.json src/data/projects.generated.json",
-    "update:resume": "node scripts/parse-resume.mjs && node scripts/fetch-logos.mjs && prettier -w src/data/resume.json"
+    "update:resume": "node scripts/parse-resume.mjs && node scripts/fetch-logos.mjs && prettier -w src/data/resume.json",
+    "eval": "jest -c jest.eval.config.js"
   },
   "dependencies": {
     "@eslint/js": "^10.0.1",

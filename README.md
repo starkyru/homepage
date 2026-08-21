@@ -29,4 +29,20 @@ The assistant answers from three trusted sources: `src/data/resume.json`, the st
 
 Edit the wiki as Markdown and run `pnpm wiki` to recompile `src/data/wiki.generated.json` (`pnpm build` does this too). The same corpus is served at `/llms-full.txt`, and summarised in `/llms.txt`.
 
+### Evaluating the chat
+
+Two layers. `pnpm test` covers retrieval quality (a hand-labeled golden set with recall@3 and MRR floors), the screening rules, the request sent to OpenAI, and the route's status mapping — no key, no cost, and it runs in CI.
+
+`pnpm eval` is the live suite: ~40 cases go through the real screen, the real retrieval and a real model call, then a judge grades each answer against the evidence it was given. It needs `OPENAI_API_KEY`, costs money, and is **not** part of CI — run it before shipping a change to the prompt, the retrieval or the wiki.
+
+```bash
+pnpm eval                              # full suite
+EVAL_ONLY=adversarial,resume pnpm eval # one or more groups
+EVAL_REPEAT=3 pnpm eval                # run each case 3×, keep the worst
+```
+
+Knobs are environment variables because Jest rejects unknown CLI flags: `EVAL_ONLY`, `EVAL_REPEAT`, `EVAL_MIN_SCORE` (suite floor, default `0.8`), `EVAL_CONCURRENCY` (default `4`), `EVAL_JUDGE_MODEL` (default `gpt-5.6-terra`).
+
+Deterministic checks — expected citations, required and forbidden phrases, whether the screen blocked it — are pass/fail per case. The judge's four axes (`grounded`, `citesPages`, `admitsGaps`, `noInvention`) only move the suite score. Adversarial cases carry no partial credit. Each run writes a scorecard to `eval/reports/latest.md` (gitignored) and prints a summary table.
+
 A "pool mode" toggle activates an interactive water caustics effect powered by [ripple-text](https://www.npmjs.com/package/ripple-text) — the resume text is extracted from the live DOM with pixel-accurate positioning, then rendered on a physics-driven canvas where characters float on simplex noise water patterns and react to click-driven ripples with spring restoration. The effect supports pluggable field and ripple algorithms, exposable settings, and adapts its color palette to the current day/night theme.

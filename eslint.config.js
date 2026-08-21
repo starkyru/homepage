@@ -96,7 +96,13 @@ export default [
     },
   },
   {
-    files: ['**/*.test.ts', '**/*.test.tsx', '**/__tests__/**/*'],
+    // `*.eval.ts` is the live evaluation suite: Jest files, run by `pnpm eval`.
+    files: [
+      '**/*.test.ts',
+      '**/*.test.tsx',
+      '**/*.eval.ts',
+      '**/__tests__/**/*',
+    ],
     languageOptions: {
       globals: {
         ...globals.jest,

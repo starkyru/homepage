@@ -42,3 +42,6 @@ sitemap.xml
 sitemap-*.xml
 new-ideas/*
 TODO.md
+
+# chat evaluation scorecards
+eval/reports/
