@@ -15,8 +15,11 @@ const MAX_OUTPUT_TOKENS = 700;
 const REQUEST_TIMEOUT_MS = 25_000;
 const DEFAULT_MODEL = 'gpt-4.1-mini';
 
+// The trailing `s?` is load-bearing: `\binstruction\b` does not match
+// "instructions", and "ignore all previous instructions" is the canonical
+// phrasing of the attack this pattern exists to catch.
 const INJECTION_PATTERN =
-  /\b(ignore|disregard|override|reveal|show|print|repeat)\b.{0,80}\b(instruction|prompt|system message|developer message|policy|secret|api key)\b/i;
+  /\b(ignore|disregard|override|reveal|show|print|repeat)\b.{0,80}\b(instruction|prompt|system message|developer message|policy|secret|api key)s?\b/i;
 
 export type Screened =
   | { ok: true; message: string }
