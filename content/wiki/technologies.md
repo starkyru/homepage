@@ -10,7 +10,7 @@ Use this page to route technology questions; individual project pages contain th
 
 - **React / Next.js:** Overtone, Overtone's Mood surface, WallSnap, AngleForge, Countersign, Timerail, Gallery SaaS, Homepage, Frontend Debugger Cloud, learn-fullstack.
 - **React Native / Expo:** Overtone mobile, Mood mobile.
-- **Vue / Pinia:** Store AI, stream-schema, vue-sagas, Frontend Debugger inspection support.
+- **Vue (also written Vue 3, Vue3, Vue version 3, Vue.js) / Pinia:** Store AI, stream-schema, vue-sagas, Frontend Debugger inspection support.
 - **Angular, Svelte, Solid, Preact, Lit:** Store AI adapters; Frontend Debugger inspection support where noted.
 - **Node.js / TypeScript:** the primary stack across nearly all products, developer tools, and libraries.
 - **Python:** Countersign SDK, Spendgate, learn-ai, and generated-server support in mcpmake.

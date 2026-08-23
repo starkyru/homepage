@@ -114,6 +114,12 @@ function section(body, heading) {
  * A trailing version is dropped ("Next.js 15" → "Next.js"): visitors ask about
  * the technology, and matching is substring-with-boundaries, so the versioned
  * spelling still finds the shorter name. The page body keeps the version.
+ *
+ * The closed-up spelling is kept alongside it ("Vue 3" also yields "Vue3").
+ * People write a major version with or without the space, and boundary matching
+ * cannot bridge one: "vue3" has a word character straight after "vue", so the
+ * bare name never matches it. Only dotless names get this — "Next.js15" is not
+ * a spelling anybody types.
  */
 function technologyList(body) {
   const names = new Set();
@@ -122,12 +128,15 @@ function technologyList(body) {
     if (!bullet) continue;
     const items = bullet[1].replace(/^\*\*.*?:\*\*\s*/, '');
     for (const item of items.split(/,|\/(?=\s)/)) {
-      const name = item
+      const cleaned = item
         .replace(/\*\*/g, '')
         .replace(/[.;]+$/, '')
-        .replace(/\s+v?\d+(\.\d+|\.x)*\+?$/, '')
         .trim();
-      if (name) names.add(name);
+      const versioned = /^(.*?)\s+v?(\d+(?:\.\d+|\.x)*\+?)$/.exec(cleaned);
+      const name = (versioned ? versioned[1] : cleaned).trim();
+      if (!name) continue;
+      names.add(name);
+      if (versioned && !name.includes('.')) names.add(`${name}${versioned[2]}`);
     }
   }
   return [...names];

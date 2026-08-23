@@ -268,3 +268,22 @@ The injection guard had a third, since fixed: `\binstruction\b` does not match
 untouched. It over-blocks in the other direction too — "show", "print" and
 "prompt" are ordinary words — and those cases are recorded the same way in
 `src/app/api/chat/__tests__/screen.test.ts`.
+
+### 2026-08-23 — a version-less technology name misses the closed-up spelling
+
+`technologyList` in `scripts/build-wiki.mjs` strips a trailing version so
+"Vue 3" is indexed as "Vue", on the reasoning that boundary matching lets the
+short name answer the versioned question. That holds for "Vue 3" and "Vue
+version 3" — a space follows "vue" in both — and fails for "Vue3", where the
+digit is a word character and `contains()` rejects the boundary. Nothing on the
+site matched a visitor typing "Vue3".
+
+The generator now emits both spellings for a dotless name, so vue-sagas carries
+`Vue` and `Vue3`. Dotted names are left alone: "Next.js15" is not a spelling
+anybody types. The same change gives React19, Python3.11+ and LangGraph1.x for
+free, which is the point — this is about how people write versions, not about
+Vue.
+
+`content/wiki/technologies.md` also names the spellings inline. That page is in
+every prompt as part of the overview, so it helps the model answer; only the
+generated technology list decides which pages are retrieved.

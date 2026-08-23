@@ -123,6 +123,11 @@ const TECHNOLOGY: GoldenCase[] = [
     expected: ['vue-sagas'],
   },
   {
+    question: 'Anything on Vue3?',
+    mode: 'exactSet',
+    expected: ['vue-sagas'],
+  },
+  {
     question: 'Anything built on rrweb?',
     mode: 'exactSet',
     expected: ['frontend-debugger'],

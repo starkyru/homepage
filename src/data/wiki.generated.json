@@ -1,7 +1,7 @@
 {
   "lastVerified": "2026-08-13",
   "index": "# Project index\n\nThis index routes external readers and the portfolio LLM to one public-safe page per project family. It combines the active portfolio audit with projects listed on the homepage; related public/private repositories are described together when they form one coherent system.\n\n## Apps and products\n\n- [Overtone.art](projects/overtone.md) — an end-to-end photography gallery and print storefront spanning web, mobile, backend, payments, fulfillment, media processing, and AI-assisted catalog content, including the Mood design-discovery surface built on the same platform.\n- [WallSnap](projects/wallsnap.md) — reusable geometry and rendering infrastructure plus a hosted Shopify experience for previewing artwork at scale inside room photography.\n- [AngleForge](projects/angleforge.md) — an ad-creative production system that turns an offer into claim-checked angle, hook, style, and placement variants with deterministic rendering.\n- [Countersign](projects/countersign.md) — open-source and hosted human-approval primitives for pausing consequential LangGraph actions and resuming them with structured reviewer decisions.\n- [Timerail](projects/timerail.md) — a headless-first React calendar and resource scheduler with accessible interaction models, themeable UI layers, and dense planning views.\n- [Gallery SaaS](projects/gallery-saas.md) — a multi-tenant photography commerce platform with storefront, account, operator, marketing, payment, and print-fulfillment systems.\n- [Agent Signals](projects/agent-signals.md) — a small signal broker, MCP surface, hooks, and native notification client for long-running AI-agent workflows.\n- [Spendgate](projects/spendgate.md) — graph-level token and cost governance for LangGraph, including hierarchical budgets and checkpoint-aware interruption.\n- [Homepage](projects/homepage.md) — the portfolio itself: a Next.js experience with a physics-driven visual identity, structured resume data, SEO metadata, and a grounded LLM chat.\n\n## Developer tools and internal systems\n\n- [mcpmake](projects/mcpmake.md) — a CLI, generation library, and hosted system that converts API descriptions and captures into editable Model Context Protocol servers.\n- [Frontend Debugger](projects/frontend-debugger.md) — an MCP and desktop toolkit that lets coding agents inspect framework component state, accessibility, visual changes, and browser sessions.\n- [btw](projects/btw.md) — a context-aware personal knowledge agent available as a terminal UI, desktop application, MCP/ACP server, browser extension, and Telegram bot.\n- [canvas-editor](projects/canvas-editor.md) — a framework-neutral Fabric.js editing engine with React bindings, format conversion, templates, shapes, cloud adapters, and image-processing extensions.\n- [Skills](projects/skills.md) — reusable coding-agent skills, templates, validation scripts, and documentation for repeatable engineering workflows.\n\n## Libraries\n\n- [printify-sdk](projects/printify-sdk.md) — a typed TypeScript client for Printify's API.\n- [prodigi-print-api](projects/prodigi-print-api.md) — a typed TypeScript client for Prodigi's Print API with an interactive React explorer.\n- [Store AI](projects/store-ai.md) — framework- and state-store-neutral adapters for consuming AI streams across fourteen frontend ecosystems.\n- [stream-schema](projects/stream-schema.md) — a small streaming structured-data layer with core, React, Vue, and Zod integrations.\n- [zustand-sagas](projects/zustand-sagas.md) — Redux-Saga-style generator orchestration adapted to Zustand stores.\n- [vue-sagas](projects/vue-sagas.md) — an experimental saga runtime with framework-neutral, Vue, and Pinia packages.\n- [ripple-text](projects/ripple-text.md) — a physics-driven text-animation engine for pointer and touch ripple effects.\n\n## Learning systems\n\n- [learn-ai](projects/learn-ai.md) — a TypeScript and Python curriculum spanning LLM fundamentals, RAG, agents, multimodality, evaluation, security, operations, and from-scratch implementations.\n- [learn-fullstack](projects/learn-fullstack.md) — a large TypeScript curriculum from language and browser fundamentals through production React, backend, data, realtime, testing, and deployment systems.\n\n## Interpretation notes\n\n“Internal” means the project was built to support other work; it does not imply weaker engineering. “Experiment” means it was used to explore a technical idea and should not be represented as a currently operated product. The absence of commercial or user metrics is deliberate: this wiki documents engineering experience, not confidential business performance.",
-  "technologies": "# Technology reverse index\n\nUse this page to route technology questions; individual project pages contain the fuller inventory and context.\n\n- **React / Next.js:** Overtone, Overtone's Mood surface, WallSnap, AngleForge, Countersign, Timerail, Gallery SaaS, Homepage, Frontend Debugger Cloud, learn-fullstack.\n- **React Native / Expo:** Overtone mobile, Mood mobile.\n- **Vue / Pinia:** Store AI, stream-schema, vue-sagas, Frontend Debugger inspection support.\n- **Angular, Svelte, Solid, Preact, Lit:** Store AI adapters; Frontend Debugger inspection support where noted.\n- **Node.js / TypeScript:** the primary stack across nearly all products, developer tools, and libraries.\n- **Python:** Countersign SDK, Spendgate, learn-ai, and generated-server support in mcpmake.\n- **NestJS:** Overtone and its Mood surface, Gallery SaaS, and learn-fullstack.\n- **PostgreSQL:** Overtone, Gallery SaaS, AngleForge, Timerail Cloud, and learn-fullstack.\n- **SQLite:** btw, Agent Signals, and local/in-process test infrastructure.\n- **Redis / queues / realtime:** Overtone, Gallery SaaS, AngleForge jobs, Socket.IO, SSE, and agent notification flows.\n- **MCP:** Overtone, mcpmake, Frontend Debugger, btw, Agent Signals, learn-ai, and Homepage-adjacent assistant tooling.\n- **LLM and AI SDKs:** Anthropic SDK, OpenAI SDK, Vercel AI SDK, LangGraph, LangChain, NVIDIA-compatible providers, and Hugging Face Transformers.\n- **Graphics and media:** Fabric.js, Sharp, Canvas, Three.js, GSAP, BlurHash, PDFKit/pdf-lib, PSD parsing, and image-generation provider adapters.\n- **State management:** Zustand, Redux Toolkit, Redux Saga, TanStack Query, Pinia, and Store AI's adapters for multiple ecosystems.\n- **Testing:** Vitest, Jest, Playwright, React Testing Library, Storybook, axe-core, fast-check, Supertest, pytest, and mypy/ruff for Python.\n- **Build and monorepos:** Turborepo, pnpm/npm workspaces, Nx, Vite, tsup, SWC, Changesets, Docker, and GitHub Actions.\n- **Cloud and integrations:** AWS S3/CDK, Shopify, Stripe, print-on-demand APIs, EasyPost, Twilio, OAuth, Google Drive, GitHub Apps, and browser/CDP integrations.",
+  "technologies": "# Technology reverse index\n\nUse this page to route technology questions; individual project pages contain the fuller inventory and context.\n\n- **React / Next.js:** Overtone, Overtone's Mood surface, WallSnap, AngleForge, Countersign, Timerail, Gallery SaaS, Homepage, Frontend Debugger Cloud, learn-fullstack.\n- **React Native / Expo:** Overtone mobile, Mood mobile.\n- **Vue (also written Vue 3, Vue3, Vue version 3, Vue.js) / Pinia:** Store AI, stream-schema, vue-sagas, Frontend Debugger inspection support.\n- **Angular, Svelte, Solid, Preact, Lit:** Store AI adapters; Frontend Debugger inspection support where noted.\n- **Node.js / TypeScript:** the primary stack across nearly all products, developer tools, and libraries.\n- **Python:** Countersign SDK, Spendgate, learn-ai, and generated-server support in mcpmake.\n- **NestJS:** Overtone and its Mood surface, Gallery SaaS, and learn-fullstack.\n- **PostgreSQL:** Overtone, Gallery SaaS, AngleForge, Timerail Cloud, and learn-fullstack.\n- **SQLite:** btw, Agent Signals, and local/in-process test infrastructure.\n- **Redis / queues / realtime:** Overtone, Gallery SaaS, AngleForge jobs, Socket.IO, SSE, and agent notification flows.\n- **MCP:** Overtone, mcpmake, Frontend Debugger, btw, Agent Signals, learn-ai, and Homepage-adjacent assistant tooling.\n- **LLM and AI SDKs:** Anthropic SDK, OpenAI SDK, Vercel AI SDK, LangGraph, LangChain, NVIDIA-compatible providers, and Hugging Face Transformers.\n- **Graphics and media:** Fabric.js, Sharp, Canvas, Three.js, GSAP, BlurHash, PDFKit/pdf-lib, PSD parsing, and image-generation provider adapters.\n- **State management:** Zustand, Redux Toolkit, Redux Saga, TanStack Query, Pinia, and Store AI's adapters for multiple ecosystems.\n- **Testing:** Vitest, Jest, Playwright, React Testing Library, Storybook, axe-core, fast-check, Supertest, pytest, and mypy/ruff for Python.\n- **Build and monorepos:** Turborepo, pnpm/npm workspaces, Nx, Vite, tsup, SWC, Changesets, Docker, and GitHub Actions.\n- **Cloud and integrations:** AWS S3/CDK, Shopify, Stripe, print-on-demand APIs, EasyPost, Twilio, OAuth, Google Drive, GitHub Apps, and browser/CDP integrations.",
   "projects": [
     {
       "slug": "agent-signals",
@@ -169,6 +169,7 @@
       "overview": "Countersign provides human-approval primitives for LangGraph agents that need to pause a consequential action, display a structured review, and resume with an approve, reject, edit, or free-form response decision. I built a typed Python SDK around LangGraph interruption, a versioned JSON Schema wire contract, reusable React inbox and approval components, structured diffs, schema-driven edit forms, audit timelines, runnable examples, and a hosted team console. The open-source boundary allows applications to retain control of authentication and transport, while the hosted system adds a Next.js review experience and infrastructure automation. This project focuses on human-in-the-loop reliability, typed interoperability between Python and TypeScript, accessible review interfaces, and resumable agent state instead of ad hoc confirmation prompts.",
       "technologies": [
         "Python",
+        "Python3.11+",
         "LangGraph",
         "LangChain Core",
         "typed decorators",
@@ -257,6 +258,7 @@
         "throttling",
         "Next.js",
         "React",
+        "React19",
         "Tailwind CSS",
         "Zustand",
         "DnD Kit",
@@ -376,6 +378,7 @@
       "technologies": [
         "TypeScript",
         "React",
+        "React19",
         "Next.js",
         "Vite",
         "Tailwind CSS",
@@ -481,6 +484,7 @@
         "MCP",
         "Next.js",
         "React",
+        "React19",
         "React Native",
         "React Navigation",
         "Tailwind CSS",
@@ -651,8 +655,10 @@
       "overview": "Spendgate is a Python library for enforcing token and monetary budgets inside LangGraph rather than only at an API proxy. I built typed decorators and a governor that can attribute and cap spend at node, subgraph, run, session, and user scopes, with idempotent counters and a checkpoint-aware breach path that interrupts the graph instead of discarding state. The design allows a reviewer to resume, change a cap, or abandon work cleanly and leaves room for pre-run forecasts, warning thresholds, model degradation policies, and telemetry export. The project is deliberately pre-alpha and should be described as implemented cost-governance infrastructure under hardening, not as a finished hosted service.",
       "technologies": [
         "Python",
+        "Python3.11+",
         "uv packaging and environments",
         "LangGraph",
+        "LangGraph1.x",
         "LangChain Core",
         "interrupt/resume and checkpointer primitives",
         "typed Python",
@@ -741,6 +747,7 @@
       "technologies": [
         "TypeScript",
         "React",
+        "React19",
         "framework-neutral reducers/state machines",
         "CSS custom properties and cascade layers",
         "Temporal-aware date abstraction",
@@ -783,6 +790,7 @@
         "TypeScript",
         "JavaScript generators",
         "Vue",
+        "Vue3",
         "Pinia",
         "Nx",
         "Vite",
