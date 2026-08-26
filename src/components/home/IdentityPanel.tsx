@@ -195,10 +195,15 @@ export default function IdentityPanel({
                 <span aria-hidden='true' className='chain-boring__arrow'>
                   →
                 </span>
-                {boring
-                  ? 'Bring the chain back!'
-                  : "I'm boring. Show the plain text resume instead."}
+                {boring ? 'Bring the chain back!' : "I'm boring"}
               </button>
+              {/* The other half of the accessible name, kept out of the button
+                  so the label stays the joke and the button stays one line. */}
+              <p style={boringCaption}>
+                {boring
+                  ? 'Return to the interactive view.'
+                  : 'Show the plain text resume instead.'}
+              </p>
             </div>
           )}
         </div>
@@ -266,7 +271,7 @@ export const btnOutline: CSSProperties = {
 // joke, so it stays off `chain-btn` rather than stacking two sets of transform
 // and filter rules on one element. The border and radius are the CTAs'; the
 // amber is the drift animation's resting value (see globals.css).
-const boringButton = {
+const boringButton: CSSProperties = {
   ...btnBase,
   display: 'block',
   width: '100%',
@@ -280,10 +285,16 @@ const boringButton = {
   color: palette.amber,
   cursor: 'pointer',
   fontFamily: 'inherit',
-  // The label runs to two lines in this column; balanced, it breaks near the
-  // middle instead of leaving "instead." alone on the second.
-  textWrap: 'balance',
-} as CSSProperties;
+};
+
+// Sits under the button, and reads as its caption rather than as a second line
+// of the blurb above — so it is dimmer than the amber that block is set in.
+const boringCaption: CSSProperties = {
+  margin: '6px 0 0',
+  fontSize: 12,
+  lineHeight: 1.5,
+  color: 'rgba(236,231,221,.55)',
+};
 
 const btnGhost: CSSProperties = {
   ...btnBase,
