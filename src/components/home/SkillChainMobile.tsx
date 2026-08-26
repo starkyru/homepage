@@ -184,11 +184,10 @@ export default function SkillChainMobile({
   const [centered, setCentered] = useState(0);
   const [shownJob, setShownJob] = useState(0);
   const [panelUp, setPanelUp] = useState(true);
-  // Open on arrival: the first job's detail sheet is up before any input, so
-  // the title row reads as a thing that opens rather than a static label. It
-  // is not pinned (keepOpenRef stays false) — the first scroll collapses it and
-  // it stays down until a box or the title row asks for it.
-  const [expanded, setExpanded] = useState(true);
+  // Closed on arrival: the title row is the only thing up before any input, so
+  // the chain itself is what the visitor lands on rather than a sheet covering
+  // a third of it. The sheet comes up when a box or the title row asks for it.
+  const [expanded, setExpanded] = useState(false);
   const keepOpenRef = useRef(false);
   const accordionRef = useRef<HTMLDivElement>(null);
   const reExpandTimer = useRef<number | null>(null);
