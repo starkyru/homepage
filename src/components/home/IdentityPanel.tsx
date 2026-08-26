@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 
 import { resumePdfUrl } from '@/constant/resume';
 
-import { INTRO, palette, SOCIALS } from './model';
+import { INTRO_PARAGRAPHS, palette, SOCIALS } from './model';
 
 const serif = 'var(--font-newsreader), Georgia, serif';
 
@@ -100,22 +100,15 @@ export default function IdentityPanel({
         <br />
         React · React Native · Vue · TypeScript · Node
       </div>
-      <p
-        style={
-          {
-            margin: 0,
-            fontSize: 14,
-            lineHeight: 1.6,
-            color: 'rgba(236,231,221,.78)',
-            textWrap: 'pretty',
-            // The static column is as wide as the resume below it; the prose
-            // still wants a readable measure (WCAG 1.4.8 caps it at 80 chars).
-            maxWidth: '68ch',
-          } as CSSProperties
-        }
-      >
-        {INTRO}
-      </p>
+      {/* One flex child, not one per sentence: the column's 20px gap is for
+          the panel's sections, and the paragraphs mark their own breaks. */}
+      <div style={introBlock}>
+        {INTRO_PARAGRAPHS.map((text) => (
+          <p key={text} style={introParagraph}>
+            {text}
+          </p>
+        ))}
+      </div>
       {!mobile && (
         <div
           style={{
@@ -238,6 +231,25 @@ export default function IdentityPanel({
     </div>
   );
 }
+
+// The static column is as wide as the resume below it; the prose still wants a
+// readable measure (WCAG 1.4.8 caps it at 80 characters).
+const introBlock: CSSProperties = { maxWidth: '68ch' };
+
+// One sentence per paragraph, each opening on an indent. That indent is what
+// marks the break, which is why the paragraphs carry no margin between them.
+const introParagraph = {
+  margin: 0,
+  textIndent: '1.5em',
+  fontSize: 14,
+  lineHeight: 1.6,
+  color: 'rgba(236,231,221,.78)',
+  textWrap: 'pretty',
+  textAlign: 'justify',
+  // Lines break between words only — a justified narrow column opens wider
+  // word gaps for it, which still reads better than splitting words.
+  hyphens: 'none',
+} as CSSProperties;
 
 const btnBase: CSSProperties = {
   textDecoration: 'none',

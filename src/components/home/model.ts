@@ -150,7 +150,33 @@ export const SOCIALS: { label: string; href: string }[] = [
   { label: 'Email', href: `mailto:${resume.contacts.email}` },
 ];
 
-export const INTRO = resume.summary;
+/**
+ * The doc writes the summary as one block of prose; the panel sets it as
+ * paragraphs, one per sentence.
+ *
+ * A sentence ends where terminal punctuation is followed by space *and* a
+ * capital — "React, Next.js, and" and "3,500 daily users" both carry a full
+ * stop or a comma mid-token and must not become a paragraph break. Lookahead
+ * only, no lookbehind: a lookbehind is a syntax error on Safari below 16.4,
+ * and that fails the whole bundle at parse time rather than just this line.
+ */
+const MIN_PARAGRAPH = 58;
+
+export const INTRO_PARAGRAPHS = resume.summary
+  .replace(/([.!?])\s+(?=[A-Z])/g, '$1\n')
+  .split('\n')
+  // A sentence under MIN_PARAGRAPH characters — "Green Card holder, no visa
+  // sponsorship required." is 48, and the bar is that plus a little room —
+  // sets a paragraph that is one short line and mostly indent. It joins the
+  // one above it instead. The first sentence has nothing to join, so it
+  // always opens a paragraph of its own.
+  .reduce<string[]>((paras, sentence) => {
+    const last = paras.length - 1;
+    if (last >= 0 && sentence.length < MIN_PARAGRAPH)
+      paras[last] = `${paras[last]} ${sentence}`;
+    else paras.push(sentence);
+    return paras;
+  }, []);
 
 // ---------------------------------------------------------------------------
 // Scene assembly.

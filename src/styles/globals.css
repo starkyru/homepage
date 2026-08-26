@@ -30,6 +30,21 @@ html.dark {
   background: #100e0b;
 }
 
+/* Nothing on this site scrolls sideways — every view is a vertical column — so
+   a horizontal gesture has nothing to move and the browser answers it with its
+   own default: the whole page rubber-bands to the right and springs back (and
+   on a trackpad, Chrome will take the same swipe as go-back). That reads as
+   "the site can be pulled around", which is the bug it was reported as. It is
+   not overflow: the document is exactly as wide as the viewport.
+
+   `none` rather than `contain`: contain only stops the gesture from chaining
+   out of a nested scroller, and here the page itself is the thing bouncing.
+   The y axis is untouched — pull-to-refresh and the vertical bounce stay. */
+html,
+body {
+  overscroll-behavior-x: none;
+}
+
 /* The static resume stays in the DOM for SEO/agents, but on motion-OK screens
    an interactive view mounts (the desktop chain ≥900px, the mobile chain below
    it), so we hide the fallback at first paint — before JS runs — so it never

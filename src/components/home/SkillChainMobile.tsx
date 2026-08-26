@@ -395,7 +395,16 @@ export default function SkillChainMobile({
           position: 'relative',
           width: scene.world.w,
           height: scene.world.h,
-          margin: '0 auto',
+          // The scene is built for the viewport width rounded to the nearest
+          // 40px bucket (SiteShell), so on a 393px phone the world is 400px
+          // wide — and `margin: 0 auto` cannot centre a box wider than its
+          // container: auto resolves to 0 on the left and the whole overflow
+          // lands on the right, which put the chain off centre and gave the
+          // scroller 7px of horizontal drag. A percentage margin resolves
+          // against the container in both directions, so this centres the
+          // stage whether it is narrower or wider than the scroller; the
+          // scroller clips what hangs over (overflowX there).
+          margin: `0 calc((100% - ${scene.world.w}px) / 2)`,
           userSelect: 'none',
           opacity: ready ? 1 : 0,
           transition: 'opacity .45s ease',

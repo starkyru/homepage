@@ -518,6 +518,16 @@ export default function SiteShell({ children }: { children: ReactNode }) {
                 position: 'relative',
                 height: '100dvh',
                 overflowY: 'auto',
+                // Explicit, and not just for tidiness: `visible` on one axis
+                // computes to `auto` when the other one scrolls, so leaving
+                // this out made the column drag sideways by however much the
+                // stage overhangs the viewport (see SkillChainMobile's margin).
+                // Nothing here is meant to be reachable sideways.
+                overflowX: 'hidden',
+                // …and a sideways gesture over it stops here rather than
+                // chaining out to the page, which would bounce (see the
+                // overscroll-behavior-x rule in globals.css).
+                overscrollBehaviorX: 'none',
                 // The chain freezes this element (.chain-locked) while the
                 // bottom bar animates it. Where the scrollbar takes real width
                 // — a desktop browser narrowed under the physics breakpoint —
