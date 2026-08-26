@@ -12,6 +12,7 @@ import { FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
 import { setAccordionOpen } from '@/lib/accordion-signal';
 
+import JobDetails from './JobDetails';
 import {
   EXPERIENCE,
   MOBILE_HEADER_H,
@@ -646,33 +647,7 @@ export default function SkillChainMobile({
             transition: `max-height ${SHEET_MS}ms ease, opacity 280ms ease`,
           }}
         >
-          <div style={{ padding: '14px 18px' }}>
-            <div
-              style={{ fontSize: 12, fontWeight: 500, color: palette.amber }}
-            >
-              {job.role}
-            </div>
-            <div
-              style={{
-                fontSize: 11.5,
-                color: 'rgba(236,231,221,.6)',
-                marginTop: 2,
-              }}
-            >
-              {job.period}
-            </div>
-            <p
-              style={{
-                margin: '8px 0 0',
-                fontSize: 12.5,
-                lineHeight: 1.5,
-                color: 'rgba(236,231,221,.72)',
-                whiteSpace: 'pre-line',
-              }}
-            >
-              {job.blurb}
-            </p>
-          </div>
+          <JobDetails job={job} padding='14px 18px' />
         </div>
 
         {/* title row — prev / expandable title / next, always at the bottom */}

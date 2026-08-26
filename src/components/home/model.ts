@@ -63,6 +63,7 @@ export interface Experience {
   role: string;
   short: string; // one-liner shown on the hanging card
   blurb: string; // full copy shown in the accordion
+  tech: string[]; // the job's "Tech:" line — the accordion's tag cloud
   location: string;
   url: string | null; // the employer's site, when the doc names one
 }
@@ -76,6 +77,7 @@ export const EXPERIENCE: Experience[] = resume.experience.map((e) => ({
   role: e.role,
   short: e.short,
   blurb: e.blurb,
+  tech: e.tech,
   location: e.location,
   url: e.url,
 }));

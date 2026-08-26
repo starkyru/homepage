@@ -175,7 +175,7 @@ export default function IdentityPanel({
           {onBoring && (
             /* Its own line, not trailing the blurb: the control is the one
                thing here you can act on, and inline it reads as prose. */
-            <p style={{ margin: '8px 0 0' }}>
+            <div style={{ marginTop: 10 }}>
               {/* The visible label is a joke; the accessible name has to say
                   what the control actually does (WCAG 2.4.6 / 2.5.3 — the
                   visible text is a subset of the accessible name). */}
@@ -183,7 +183,7 @@ export default function IdentityPanel({
                 type='button'
                 onClick={onBoring}
                 className='chain-boring'
-                style={boringLink}
+                style={boringButton}
                 aria-label={
                   boring
                     ? 'Bring the chain back. Return to the interactive view.'
@@ -199,7 +199,7 @@ export default function IdentityPanel({
                   ? 'Bring the chain back!'
                   : "I'm boring. Show the plain text resume instead."}
               </button>
-            </p>
+            </div>
           )}
         </div>
       )}
@@ -261,16 +261,29 @@ export const btnOutline: CSSProperties = {
   color: palette.text,
 };
 
-const boringLink: CSSProperties = {
+// Shaped like the CTAs above it, but deliberately not one of them: it carries
+// `chain-boring`, whose own hover, press and resting drift are what make the
+// joke, so it stays off `chain-btn` rather than stacking two sets of transform
+// and filter rules on one element. The border and radius are the CTAs'; the
+// amber is the drift animation's resting value (see globals.css).
+const boringButton = {
+  ...btnBase,
+  display: 'block',
+  width: '100%',
+  // Vertical padding is the CTAs' own, so the one-line case (mobile, and the
+  // short "bring the chain back" label) is the same 45px tap target they are.
+  padding: '12px 16px',
+  fontSize: 13,
+  lineHeight: 1.45,
   background: 'none',
-  border: 'none',
-  padding: 0,
-  font: 'inherit',
+  border: CONTROL_BORDER,
   color: palette.amber,
-  textDecoration: 'underline',
-  textUnderlineOffset: 2,
   cursor: 'pointer',
-};
+  fontFamily: 'inherit',
+  // The label runs to two lines in this column; balanced, it breaks near the
+  // middle instead of leaving "instead." alone on the second.
+  textWrap: 'balance',
+} as CSSProperties;
 
 const btnGhost: CSSProperties = {
   ...btnBase,

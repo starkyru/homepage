@@ -36,6 +36,8 @@ export default function PortfolioChat() {
   const [error, setError] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
   // The chain's accordion opens into the same corner. While it is up the
   // launcher gives the room back: the label slides shut against the icon, which
   // is pinned to the right, so the pill shrinks rightward into a disc. Its own
@@ -63,6 +65,14 @@ export default function PortfolioChat() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open]);
+
+  // The launcher is unmounted while the panel is up (the panel takes its spot),
+  // so closing would drop focus on the body — Escape especially, which leaves no
+  // pointer to say where the visitor was. Hand it back to the launcher.
+  useEffect(() => {
+    if (wasOpen.current && !open) launcherRef.current?.focus();
+    wasOpen.current = open;
   }, [open]);
 
   const submit = async (event?: FormEvent) => {
@@ -113,6 +123,8 @@ export default function PortfolioChat() {
 
   if (!checked) return null;
 
+  const panelOpen = open && enabled;
+
   return (
     // Above the chain's HUD row, not on top of it: the next-role arrow sits 28px
     // up and is 48px tall, and this launcher outranks it (z-60), so at the
@@ -124,18 +136,22 @@ export default function PortfolioChat() {
     // 4.5rem is its height (MOBILE_NAV_H in home/model.ts), so the launcher sits
     // directly on top of the bar rather than over its buttons.
     <div className='fixed bottom-[4.5rem] right-2 z-[60] font-primary min-[900px]:bottom-[100px] min-[900px]:right-10'>
-      {open && enabled && (
+      {panelOpen && (
         <div
           ref={dialogRef}
           role='dialog'
           aria-modal='true'
           aria-labelledby='portfolio-chat-title'
-          // The height cap is what keeps the panel off the top of the screen, so
-          // it has to give back whatever the launcher's offset takes: 10.5rem is
-          // that offset (4.5rem, clearing the accordion bar) plus the launcher,
-          // this panel's gap and a margin at the top; 11.75rem is the same sum
-          // once the launcher rises to clear the HUD arrow.
-          className='mb-3 flex h-[min(620px,calc(100dvh-10.5rem))] w-[calc(100vw-2rem)] max-w-[430px] flex-col overflow-hidden rounded-xl border border-amber-200/25 bg-[#16120d] text-[#ece7dd] shadow-2xl shadow-black/50 min-[900px]:h-[min(620px,calc(100dvh-11.75rem))]'
+          // The panel sits where the launcher was — the launcher is unmounted
+          // while it is up — so it starts at the container's own offset and
+          // needs no gap under it. The height cap is what keeps it off the top
+          // of the screen: 7rem is that offset (4.5rem, clearing the accordion
+          // bar) plus a margin at the top, and 8.25rem is the same sum once the
+          // offset rises to 100px to clear the HUD arrow.
+          // The width is twice the container's `right-2`, so the margin the
+          // panel leaves on the left matches the one on the right. Desktop is
+          // capped by `max-w` well before this binds.
+          className='flex h-[min(620px,calc(100dvh-7rem))] w-[calc(100vw-1rem)] max-w-[430px] flex-col overflow-hidden rounded-xl border border-amber-200/25 bg-[#16120d] text-[#ece7dd] shadow-2xl shadow-black/50 min-[900px]:h-[min(620px,calc(100dvh-8.25rem))]'
         >
           <header className='flex items-center justify-between border-b border-amber-100/15 px-4 py-3'>
             <div>
@@ -205,36 +221,47 @@ export default function PortfolioChat() {
         </div>
       )}
 
-      <button
-        type='button'
-        onClick={() => enabled && setOpen((current) => !current)}
-        disabled={!enabled}
-        title={enabled ? 'Ask about Ilia' : 'Portfolio chat is not configured'}
-        className='chat-launcher group inline-flex items-center rounded-full border border-amber-100/25 bg-[#16120d] py-3 text-sm font-semibold text-[#f5d59a] shadow-lg shadow-black/35 hover:border-[#e0a458] hover:bg-[#211a12] disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e0a458] focus-visible:ring-offset-2 focus-visible:ring-offset-[#100e0b]'
-        // Horizontal padding closes with the label so what is left is a disc
-        // around the icon, not a stadium with a gap where the words were.
-        style={{ paddingLeft: collapsed ? 12 : 16, paddingRight: 12 }}
-        aria-label={
-          enabled ? 'Open portfolio chat' : 'Portfolio chat is not configured'
-        }
-      >
-        <MessageCircle size={19} aria-hidden='true' />
-        {/* `hidden sm:inline-block` is the breakpoint rule this always had —
-            below sm the launcher is icon-only and there is nothing to collapse.
-            The width and the gap are what animate, so both are inline: max-width
-            because a span has no width to transition from, and margin because a
-            flex `gap` would hold the space open at zero width. */}
-        <span
-          className='chat-launcher__label hidden sm:inline-block'
-          style={{
-            maxWidth: collapsed ? 0 : '9rem',
-            marginLeft: collapsed ? 0 : 8,
-            opacity: collapsed ? 0 : 1,
-          }}
+      {!panelOpen && (
+        <button
+          ref={launcherRef}
+          type='button'
+          onClick={() => enabled && setOpen((current) => !current)}
+          disabled={!enabled}
+          title={
+            enabled ? 'Ask about Ilia' : 'Portfolio chat is not configured'
+          }
+          className='chat-launcher group inline-flex items-center rounded-full border border-amber-100/25 bg-[#16120d] py-3 pl-3 pr-3 text-sm font-semibold text-[#f5d59a] shadow-lg shadow-black/35 hover:border-[#e0a458] hover:bg-[#211a12] disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e0a458] focus-visible:ring-offset-2 focus-visible:ring-offset-[#100e0b] sm:pl-4'
+          // Horizontal padding closes with the label so what is left is a disc
+          // around the icon, not a stadium with a gap where the words were. The
+          // extra left padding is the label's, so it is keyed to the same `sm`
+          // the label is — below it the button is icon-only and an asymmetric
+          // pad makes an oval with the icon sitting off its centre. Only the
+          // collapse is inline; the resting value has to stay in the classes or
+          // it would outrank the breakpoint.
+          style={collapsed ? { paddingLeft: 12 } : undefined}
+          aria-label={
+            enabled ? 'Open portfolio chat' : 'Portfolio chat is not configured'
+          }
         >
-          Ask about Ilia
-        </span>
-      </button>
+          <MessageCircle size={19} aria-hidden='true' />
+          {/* `hidden sm:inline-block` is the breakpoint rule this always had —
+              below sm the launcher is icon-only and there is nothing to
+              collapse. The width and the gap are what animate, so both are
+              inline: max-width because a span has no width to transition from,
+              and margin because a flex `gap` would hold the space open at zero
+              width. */}
+          <span
+            className='chat-launcher__label hidden sm:inline-block'
+            style={{
+              maxWidth: collapsed ? 0 : '9rem',
+              marginLeft: collapsed ? 0 : 8,
+              opacity: collapsed ? 0 : 1,
+            }}
+          >
+            Ask about Ilia
+          </span>
+        </button>
+      )}
     </div>
   );
 }
